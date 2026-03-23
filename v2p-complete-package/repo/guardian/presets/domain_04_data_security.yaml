@@ -1,0 +1,83 @@
+name: "Training, Validation & Inference Data Security"
+domain_id: 4
+standard_refs:
+  - "GDPR"
+  - "OWASP LLM Top 10"
+  - "ISO/IEC 42001:2023"
+weight: 2.0
+
+controls:
+  - id: DATA-001
+    area: "Data Provenance"
+    question: "Is there a complete data lineage and provenance tracking system for all training, validation, and test datasets including source, transformations, and licensing?"
+    scan_type: config_scan
+    patterns:
+      - "data.*lineage"
+      - "data.*provenance"
+      - "data.*catalog"
+      - "data.*source"
+      - "license.*data"
+      - "dataset.*card"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Data catalog with source tracking"
+      - "Data lineage graphs showing transformations"
+      - "Dataset cards or datasheets"
+      - "Licensing and usage rights documentation"
+    remediation: "Implement a data provenance system that tracks every dataset from source through all transformations to model consumption. Document licensing terms, usage restrictions, and consent basis. Use tools like Apache Atlas, DataHub, or similar for automated lineage tracking."
+    semgrep_rules: []
+
+  - id: DATA-002
+    area: "Data Privacy"
+    question: "Are privacy-enhancing technologies (PETs) applied including anonymization, pseudonymization, differential privacy, or federated learning where personal data is involved?"
+    scan_type: code_scan
+    patterns:
+      - "anonymi[zs]"
+      - "pseudonym"
+      - "differential.*privacy"
+      - "federated"
+      - "k.anonymity"
+      - "pii.*detect"
+      - "pii.*remov"
+      - "data.*mask"
+      - "encrypt"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "PET implementation documentation"
+      - "Anonymization/pseudonymization procedures"
+      - "Privacy risk assessment for training data"
+      - "Data Protection Impact Assessment (DPIA)"
+      - "PII detection and removal logs"
+    remediation: "Apply appropriate PETs based on data sensitivity: anonymization or pseudonymization for identifiable data, differential privacy for aggregate statistics, federated learning for distributed sensitive data. Implement automated PII detection and removal in data pipelines."
+    semgrep_rules:
+      - "rules/pii-logging"
+      - "rules/hardcoded-pii"
+
+  - id: DATA-003
+    area: "Inference Data"
+    question: "Are inference-time inputs validated, sanitized, and protected against prompt injection, data poisoning, and adversarial manipulation?"
+    scan_type: code_scan
+    patterns:
+      - "input.*valid"
+      - "sanitiz"
+      - "prompt.*inject"
+      - "injection.*prevent"
+      - "input.*filter"
+      - "guardrail"
+      - "content.*filter"
+      - "rate.*limit"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Input validation and sanitization code"
+      - "Prompt injection prevention mechanisms"
+      - "Rate limiting and abuse prevention configurations"
+      - "Content filtering and guardrail implementations"
+      - "Adversarial input detection logs"
+    remediation: "Implement comprehensive input validation for all inference endpoints: validate data types and ranges, sanitize inputs against injection attacks, deploy prompt injection detection for LLM systems, enforce rate limiting, and implement content filtering guardrails."
+    semgrep_rules:
+      - "rules/prompt-injection"
+      - "rules/missing-input-validation"
+      - "rules/unsafe-user-input"

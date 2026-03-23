@@ -1,0 +1,66 @@
+name: "AI Risk Management & Oversight"
+domain_id: 2
+standard_refs:
+  - "ISO/IEC 23894:2023"
+  - "NIST AI RMF"
+  - "GDPR Art 35"
+weight: 1.0
+
+controls:
+  - id: RISK-001
+    area: "Risk Assessment"
+    question: "Does the organization perform AI-specific risk assessments that address model risks, data risks, operational risks, and societal impacts?"
+    scan_type: document_check
+    patterns:
+      - "risk.*assessment"
+      - "risk.*register"
+      - "threat.*model"
+      - "risk.*matrix"
+    auto_scannable: false
+    severity: P0
+    evidence:
+      - "AI risk assessment methodology documentation"
+      - "Risk register with AI-specific risk categories"
+      - "Risk scoring criteria and thresholds"
+      - "Completed risk assessments for deployed AI systems"
+    remediation: "Implement an AI-specific risk assessment framework that evaluates model performance risks, data quality risks, adversarial threats, operational failures, and societal impacts. Conduct assessments at each lifecycle stage and review quarterly."
+    semgrep_rules: []
+
+  - id: RISK-002
+    area: "Risk Treatment"
+    question: "Are risk treatment plans documented with measurable control effectiveness metrics and regular reassessment schedules?"
+    scan_type: document_check
+    patterns:
+      - "risk.*treatment"
+      - "control.*effective"
+      - "mitigat.*plan"
+      - "residual.*risk"
+    auto_scannable: false
+    severity: P1
+    evidence:
+      - "Risk treatment plans with assigned owners"
+      - "Control effectiveness measurement criteria"
+      - "Residual risk acceptance records"
+      - "Reassessment schedule and review logs"
+    remediation: "Document risk treatment plans for each identified AI risk with specific controls, effectiveness metrics, responsible owners, and reassessment timelines. Track residual risk levels and ensure formal risk acceptance for risks above threshold."
+    semgrep_rules: []
+
+  - id: RISK-003
+    area: "Impact Assessment"
+    question: "Are Algorithmic Impact Assessments (AIAs) conducted for high-risk AI systems, covering fundamental rights, safety, and societal effects?"
+    scan_type: document_check
+    patterns:
+      - "impact.*assessment"
+      - "aia"
+      - "dpia"
+      - "fundamental.*rights"
+      - "algorithmic.*impact"
+    auto_scannable: false
+    severity: P0
+    evidence:
+      - "Algorithmic Impact Assessment templates and completed reports"
+      - "Data Protection Impact Assessment (DPIA) records"
+      - "Fundamental rights impact analysis"
+      - "Stakeholder consultation records"
+    remediation: "Establish a mandatory AIA process for high-risk AI systems covering fundamental rights impacts, safety risks, environmental effects, and societal consequences. Integrate AIAs with existing DPIA processes where applicable. Include stakeholder consultation and public disclosure requirements."
+    semgrep_rules: []

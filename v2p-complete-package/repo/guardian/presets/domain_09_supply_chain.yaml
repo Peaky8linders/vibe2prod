@@ -1,0 +1,79 @@
+name: "Third Party, Open Source & Supply Chain Risk"
+domain_id: 9
+standard_refs:
+  - "ISO/IEC 27002:2022"
+  - "OWASP LLM Top 10"
+  - "NIST SP 800-161"
+weight: 1.3
+
+controls:
+  - id: SC-001
+    area: "Third-Party Models"
+    question: "Is due diligence performed on third-party and pre-trained models including provenance verification, license compliance, security assessment, and ongoing monitoring?"
+    scan_type: config_scan
+    patterns:
+      - "third.party.*model"
+      - "pre.trained"
+      - "hugging.*face"
+      - "model.*hub"
+      - "model.*card"
+      - "license.*check"
+      - "provenance"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Third-party model due diligence checklist and records"
+      - "Model provenance verification documentation"
+      - "License compliance assessment"
+      - "Security evaluation of third-party models"
+      - "Ongoing monitoring plan for external model dependencies"
+    remediation: "Establish a due diligence process for all third-party models: verify provenance and training data documentation, assess license compatibility, conduct security evaluation (adversarial robustness, backdoor detection), and implement ongoing monitoring for model updates and vulnerability disclosures."
+    semgrep_rules: []
+
+  - id: SC-002
+    area: "Open Source Security"
+    question: "Are open-source ML libraries and dependencies scanned for known vulnerabilities (CVEs) with automated SCA integrated into the development pipeline?"
+    scan_type: dependency_scan
+    patterns:
+      - "requirements.*txt"
+      - "setup\\.py"
+      - "pyproject\\.toml"
+      - "Pipfile"
+      - "conda.*env"
+      - "package.*json"
+      - "dependabot"
+      - "snyk"
+      - "safety"
+      - "trivy"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "SCA tool configuration and scan results"
+      - "Vulnerability management workflow documentation"
+      - "Dependency update policy and automation"
+      - "CVE remediation SLA compliance records"
+      - "Software Bill of Materials (SBOM)"
+    remediation: "Integrate SCA tools (Snyk, Trivy, Safety) into CI/CD pipelines for all ML projects. Generate SBOMs for model artifacts. Define CVE remediation SLAs by severity. Enable automated dependency updates (Dependabot, Renovate). Block deployments with critical unpatched vulnerabilities."
+    semgrep_rules: []
+
+  - id: SC-003
+    area: "Data Provider Risk"
+    question: "Are data providers assessed for security posture, and are data supply agreements (DSAs) in place with integrity verification for incoming data?"
+    scan_type: document_check
+    patterns:
+      - "data.*provider"
+      - "data.*supply"
+      - "dsa"
+      - "vendor.*assess"
+      - "data.*integrity"
+      - "third.party.*data"
+    auto_scannable: false
+    severity: P1
+    evidence:
+      - "Data provider risk assessment records"
+      - "Data supply agreements (DSAs)"
+      - "Data integrity verification procedures"
+      - "Vendor security questionnaire responses"
+      - "Data quality SLA monitoring records"
+    remediation: "Assess all data providers for security posture using vendor security questionnaires and SOC 2/ISO 27001 evidence. Establish DSAs defining data quality, integrity, privacy, and breach notification requirements. Implement automated integrity checks (checksums, schema validation) on all incoming data feeds."
+    semgrep_rules: []

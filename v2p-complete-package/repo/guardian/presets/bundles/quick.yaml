@@ -1,0 +1,6 @@
+name: "Quick Security Scan"
+description: "Fast security-focused scan covering the highest-risk domains: data security, model integrity, and access control. Ideal for pre-deployment checks or rapid risk assessment."
+domains:
+  - 4
+  - 5
+  - 6

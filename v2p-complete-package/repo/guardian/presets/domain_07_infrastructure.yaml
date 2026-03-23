@@ -1,0 +1,82 @@
+name: "Infrastructure, Cloud & MLOps Security"
+domain_id: 7
+standard_refs:
+  - "ISO/IEC 27002:2022"
+  - "NIST SP 800-53"
+  - "OWASP LLM Top 10"
+weight: 1.5
+
+controls:
+  - id: INFRA-001
+    area: "Network Segmentation"
+    question: "Are AI training environments, model serving infrastructure, and data stores isolated using network segmentation (VPCs, firewalls, micro-segmentation)?"
+    scan_type: config_scan
+    patterns:
+      - "vpc"
+      - "subnet"
+      - "firewall"
+      - "security.*group"
+      - "network.*policy"
+      - "micro.segment"
+      - "isolat"
+      - "private.*endpoint"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Network architecture diagrams showing segmentation"
+      - "VPC and subnet configurations"
+      - "Firewall rules and security group policies"
+      - "Private endpoint configurations for AI services"
+      - "Network flow logs"
+    remediation: "Isolate AI infrastructure components using VPCs with private subnets. Implement security groups and network ACLs restricting traffic to required flows only. Use private endpoints for model registries and data stores. Deploy micro-segmentation between training, serving, and data tiers."
+    semgrep_rules:
+      - "rules/open-security-group"
+      - "rules/public-subnet-exposure"
+
+  - id: INFRA-002
+    area: "Configuration Hardening"
+    question: "Are all AI infrastructure components hardened according to CIS benchmarks or equivalent standards with automated compliance checking?"
+    scan_type: config_scan
+    patterns:
+      - "cis.*benchmark"
+      - "hardening"
+      - "baseline.*config"
+      - "compliance.*check"
+      - "security.*baseline"
+      - "cloud.*posture"
+      - "cspm"
+    auto_scannable: true
+    severity: P1
+    evidence:
+      - "CIS benchmark compliance reports"
+      - "Hardening guides for AI/ML platforms"
+      - "Automated configuration scanning results"
+      - "CSPM tool deployment and alert records"
+      - "Deviation remediation tracking"
+    remediation: "Apply CIS benchmarks to all AI infrastructure components (compute, storage, networking, container runtime). Deploy CSPM tools for continuous compliance monitoring. Automate configuration drift detection and remediation. Maintain hardened base images for ML workloads."
+    semgrep_rules: []
+
+  - id: INFRA-003
+    area: "MLOps Pipeline Security"
+    question: "Are CI/CD pipelines for model training and deployment secured with integrity gates, artifact signing, and immutable build environments?"
+    scan_type: config_scan
+    patterns:
+      - "ci.*cd"
+      - "pipeline.*secur"
+      - "artifact.*sign"
+      - "code.*sign"
+      - "immutable.*build"
+      - "supply.*chain"
+      - "slsa"
+      - "sigstore"
+      - "cosign"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "CI/CD pipeline configuration with security gates"
+      - "Artifact signing implementation (Sigstore/Cosign)"
+      - "Build provenance attestations (SLSA)"
+      - "Immutable build environment configurations"
+      - "Pipeline access control and audit logs"
+    remediation: "Secure MLOps pipelines with mandatory security gates (SAST, dependency scanning, model validation) before deployment. Sign all model artifacts using Sigstore/Cosign. Generate SLSA provenance attestations. Use immutable, reproducible build environments. Restrict pipeline modification access."
+    semgrep_rules: []
