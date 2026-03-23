@@ -28,7 +28,7 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: '24h' }
     );
     res.status(201).json({ user, token });
   } catch (err: unknown) {
@@ -70,7 +70,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: '24h' }
     );
 
     res.json({ token, user: { id: user.id, email: user.email, name: user.name } });

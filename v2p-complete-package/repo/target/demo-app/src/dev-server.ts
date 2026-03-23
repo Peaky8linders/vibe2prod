@@ -228,11 +228,11 @@ const mockClient = {
   release: () => {},
 };
 
-// Set env vars BEFORE importing anything
-process.env.DATABASE_URL = 'postgresql://mock:mock@localhost:5432/mock';
-process.env.JWT_SECRET = 'dev-test-secret-key-do-not-use-in-production';
-process.env.ALLOWED_ORIGINS = 'http://localhost:3000,http://localhost:3001';
-process.env.PORT = '3001';
+// Set env vars BEFORE importing anything — use env vars if available, fallback to dev defaults
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://mock:mock@localhost:5432/mock';
+process.env.JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(32).toString('hex');
+process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001';
+process.env.PORT = process.env.PORT || '3001';
 
 // Now patch the pg module
 import pg from 'pg';

@@ -83,11 +83,11 @@ router.post('/sync/:provider', requireAuth, async (req, res) => {
   const { task_ids } = parsed2.data;
 
   try {
-    const placeholders = task_ids.map((_: string, i: number) => `$${i + 2}`).join(',');
-    const tasks = await db.query(
-      `SELECT * FROM tasks WHERE id IN (${placeholders}) AND user_id = $1`,
-      [req.user!.userId, ...task_ids]
-    );
+    // Build parameterized query — placeholders are $2, $3, ... (never user input)
+    const params: unknown[] = [req.user!.userId, ...task_ids];
+    const placeholders = task_ids.map((_: string, i: number) => '$' + (i + 2)).join(',');
+    const sql = 'SELECT * FROM tasks WHERE id IN (' + placeholders + ') AND user_id = $1';
+    const tasks = await db.query(sql, params);
 
     const syncApiKey = process.env.SYNC_API_KEY;
     if (!syncApiKey) {
@@ -160,7 +160,7 @@ router.get('/export/:userId', requireAuth, async (req, res) => {
     const BATCH_SIZE = 100;
     let hasMore = true;
     while (hasMore) {
-      const batch = await client.query(`FETCH ${BATCH_SIZE} FROM task_cursor`);
+      const batch = await client.query('FETCH ' + BATCH_SIZE + ' FROM task_cursor');
       for (const task of batch.rows) {
         res.write(`${task.id},${escapeCsv(task.title)},${escapeCsv(task.description)},${task.status},${task.priority},${task.due_date}\n`);
       }

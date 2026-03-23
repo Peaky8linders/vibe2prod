@@ -1,7 +1,13 @@
-// Set environment variables before any module imports
-process.env.JWT_SECRET = 'test-jwt-secret-for-vitest';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
-process.env.WEBHOOK_SECRET = 'test-webhook-secret';
-process.env.SYNC_API_KEY = 'test-sync-api-key';
-// Use port 0 so each listen() gets a random available port (avoids EADDRINUSE)
-process.env.PORT = '0';
+// Load test environment from .env.test — no hardcoded secrets in source
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+const envFile = resolve(__dirname, '../../.env.test');
+for (const line of readFileSync(envFile, 'utf-8').split('\n')) {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) continue;
+  const eqIdx = trimmed.indexOf('=');
+  if (eqIdx > 0) {
+    process.env[trimmed.slice(0, eqIdx)] = trimmed.slice(eqIdx + 1);
+  }
+}
