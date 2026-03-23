@@ -140,6 +140,68 @@ export async function startDashboard(port = 3002): Promise<void> {
     fs.writeFileSync(findingsFile, updated.map(f => JSON.stringify(f)).join('\n') + '\n');
   });
 
+  // API: Scan GitHub repo
+  app.post('/api/scan/github', async (req, res) => {
+    const { url, branch } = req.body;
+    if (!url) { res.status(400).json({ error: 'GitHub URL is required' }); return; }
+    try {
+      const { scanGitHubRepo } = await import('../scanners/github-scanner.js');
+      const result = await scanGitHubRepo(url, branch);
+      const findingsArr = result.findings;
+
+      const findingsFile = path.join(FINDINGS_DIR, 'findings.jsonl');
+      const entries = findingsArr.map((f: Record<string, unknown>) => JSON.stringify({ ...f, status: 'open', ts: new Date().toISOString() }));
+      fs.writeFileSync(findingsFile, entries.join('\n') + '\n');
+
+      // Save score
+      fs.writeFileSync(path.join(FINDINGS_DIR, 'compliance-score.json'), JSON.stringify(result.score));
+
+      res.json({ count: findingsArr.length, findings: findingsArr, score: result.score });
+    } catch (err) {
+      res.status(500).json({ error: 'GitHub scan failed', details: err instanceof Error ? err.message : 'unknown' });
+    }
+  });
+
+  // API: DAST scan (live URL)
+  app.post('/api/scan/url', async (req, res) => {
+    const { url } = req.body;
+    if (!url) { res.status(400).json({ error: 'URL is required' }); return; }
+    try {
+      const { scan: dastScan } = await import('../scanners/dast-scanner.js');
+      const dastFindings = await dastScan(url);
+
+      const findingsFile = path.join(FINDINGS_DIR, 'findings.jsonl');
+      const entries = dastFindings.map((f: Record<string, unknown>) => JSON.stringify({ ...f, status: 'open', ts: new Date().toISOString() }));
+      fs.appendFileSync(findingsFile, entries.join('\n') + '\n');
+
+      res.json({ count: dastFindings.length, findings: dastFindings });
+    } catch (err) {
+      res.status(500).json({ error: 'URL scan failed', details: err instanceof Error ? err.message : 'unknown' });
+    }
+  });
+
+  // API: HTML compliance report
+  app.get('/api/report/html', async (_req, res) => {
+    try {
+      const { generateReport } = await import('../report/pdf-generator.js');
+      const html = generateReport();
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+    } catch (err) {
+      res.status(500).json({ error: 'Report generation failed', details: err instanceof Error ? err.message : 'unknown' });
+    }
+  });
+
+  // API: JSON report
+  app.get('/api/report/json', async (_req, res) => {
+    try {
+      const { generateJsonReport } = await import('../report/pdf-generator.js');
+      res.json(generateJsonReport());
+    } catch (err) {
+      res.status(500).json({ error: 'Report generation failed' });
+    }
+  });
+
   // API: Get findings queue (from hooks)
   app.get('/api/queue', (_req, res) => {
     const queueFile = path.join(CONFIG_DIR, 'findings-queue.jsonl');

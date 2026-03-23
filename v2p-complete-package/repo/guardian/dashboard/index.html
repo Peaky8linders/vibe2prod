@@ -3,372 +3,468 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Compliance Guardian — Dashboard</title>
+  <title>AI Compliance Guardian</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #e0e0e0; }
-    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-    h1 { font-size: 22px; color: #fff; display: flex; align-items: center; gap: 10px; }
-    .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
-    .tabs { display: flex; gap: 2px; margin-bottom: 20px; background: #151515; border-radius: 8px; padding: 3px; width: fit-content; }
-    .tab { padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #888; transition: all 0.2s; }
-    .tab.active { background: #2563eb; color: #fff; }
-    .tab:hover:not(.active) { color: #ccc; }
-    .grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
-    .card { background: #151515; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px; }
-    .card h2 { font-size: 14px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .score-big { font-size: 56px; font-weight: 700; color: #fff; line-height: 1; }
-    .score-big.good { color: #4ade80; }
-    .score-big.warn { color: #facc15; }
-    .score-big.bad { color: #f87171; }
-    .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
-    .stat-row:last-child { border-bottom: none; }
-    .domain-bar { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
-    .domain-bar .bar { flex: 1; height: 6px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
-    .domain-bar .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
-    .domain-bar .bar-fill.good { background: #4ade80; }
-    .domain-bar .bar-fill.warn { background: #facc15; }
-    .domain-bar .bar-fill.bad { background: #f87171; }
-    .finding { padding: 12px; border: 1px solid #2a2a2a; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.2s; }
-    .finding:hover { border-color: #444; }
-    .finding .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .finding .title { font-size: 14px; font-weight: 500; }
-    .finding .meta { font-size: 11px; color: #666; }
-    .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
-    .badge.P0 { background: #dc262633; color: #f87171; }
-    .badge.P1 { background: #ea580c33; color: #fb923c; }
-    .badge.P2 { background: #ca8a0433; color: #facc15; }
-    .badge.P3 { background: #2563eb33; color: #60a5fa; }
-    .badge.open { background: #dc262622; color: #f87171; }
-    .badge.fixed { background: #16a34a22; color: #4ade80; }
-    .badge.in_progress { background: #2563eb22; color: #60a5fa; }
-    .detail-panel { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; margin-top: 12px; display: none; }
-    .detail-panel.visible { display: block; }
-    .detail-panel h3 { font-size: 14px; margin-bottom: 8px; }
-    .detail-panel pre { background: #151515; padding: 10px; border-radius: 6px; font-size: 12px; overflow-x: auto; margin: 8px 0; font-family: 'Cascadia Code', 'Fira Code', monospace; }
-    .detail-panel .remediation { background: #16a34a11; border: 1px solid #16a34a33; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 13px; }
-    button { padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-danger { background: #dc2626; color: #fff; }
-    .btn-success { background: #16a34a; color: #fff; }
-    .btn-secondary { background: #333; color: #ccc; }
-    .btn-secondary:hover { background: #444; }
-    .field { margin-bottom: 10px; }
-    .field label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .field input, .field select { width: 100%; padding: 7px 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 13px; }
-    .field input:focus { border-color: #2563eb; outline: none; }
-    .actions-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
-    .filter-bar select, .filter-bar input { padding: 6px 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 12px; }
-    .empty { text-align: center; padding: 40px; color: #555; }
-    #settingsPanel, #findingsPanel { display: none; }
-    #findingsPanel.active, #settingsPanel.active, #overviewPanel.active { display: block; }
-    .std-refs { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-    .std-ref { font-size: 10px; padding: 1px 6px; background: #1a1a1a; border-radius: 4px; color: #888; }
+    body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #09090b; color: #e4e4e7; font-size: 14px; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 20px 24px; }
+
+    /* Header */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #1c1c22; margin-bottom: 24px; }
+    header h1 { font-size: 20px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .nav { display: flex; gap: 4px; background: #18181b; border-radius: 8px; padding: 3px; }
+    .nav-btn { padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #71717a; border: none; background: none; font-family: inherit; transition: all 0.15s; }
+    .nav-btn.active { background: #2563eb; color: #fff; }
+    .nav-btn:hover:not(.active) { color: #d4d4d8; }
+
+    /* Scan Input Bar */
+    .scan-bar { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .scan-bar h2 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+    .scan-row { display: flex; gap: 10px; align-items: end; }
+    .scan-input-wrap { flex: 1; }
+    .scan-input-wrap label { display: block; font-size: 11px; color: #71717a; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .scan-input { width: 100%; padding: 10px 14px; background: #09090b; border: 1px solid #3f3f46; border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit; transition: border 0.15s; }
+    .scan-input:focus { border-color: #2563eb; outline: none; }
+    .scan-input::placeholder { color: #52525b; }
+    .scan-select { padding: 10px 12px; background: #09090b; border: 1px solid #3f3f46; border-radius: 8px; color: #e4e4e7; font-size: 13px; font-family: inherit; }
+    .scan-btn { padding: 10px 24px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: background 0.15s; }
+    .scan-btn:hover { background: #1d4ed8; }
+    .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .scan-options { display: flex; gap: 16px; margin-top: 10px; align-items: center; }
+    .scan-radio { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #a1a1aa; cursor: pointer; }
+    .scan-radio input { accent-color: #2563eb; }
+    .scan-progress { display: none; margin-top: 12px; }
+    .scan-progress.active { display: block; }
+    .progress-bar { height: 4px; background: #27272a; border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #2563eb; border-radius: 2px; width: 0%; transition: width 0.3s; animation: progress 2s ease-in-out infinite; }
+    @keyframes progress { 0% { width: 10%; } 50% { width: 80%; } 100% { width: 10%; } }
+    .progress-text { font-size: 12px; color: #71717a; margin-top: 6px; }
+
+    /* Score + Stats Row */
+    .stats-row { display: grid; grid-template-columns: 200px 1fr 300px; gap: 16px; margin-bottom: 24px; }
+    .score-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .score-gauge { position: relative; width: 120px; height: 120px; }
+    .score-gauge svg { transform: rotate(-90deg); }
+    .score-gauge .bg { fill: none; stroke: #27272a; stroke-width: 8; }
+    .score-gauge .fg { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+    .score-gauge .fg.good { stroke: #22c55e; }
+    .score-gauge .fg.warn { stroke: #eab308; }
+    .score-gauge .fg.bad { stroke: #ef4444; }
+    .score-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: 700; color: #fff; }
+    .score-grade { font-size: 12px; color: #71717a; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+    .findings-summary { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; }
+    .findings-summary h3 { font-size: 13px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .severity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sev-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #09090b; border-radius: 8px; }
+    .sev-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .sev-dot.P0 { background: #ef4444; }
+    .sev-dot.P1 { background: #f97316; }
+    .sev-dot.P2 { background: #eab308; }
+    .sev-dot.P3 { background: #3b82f6; }
+    .sev-label { font-size: 12px; color: #a1a1aa; }
+    .sev-count { font-size: 18px; font-weight: 700; color: #fff; margin-left: auto; }
+
+    .actions-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .actions-card h3 { font-size: 13px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .action-btn { padding: 9px 16px; border: 1px solid #27272a; border-radius: 8px; background: #18181b; color: #e4e4e7; font-size: 13px; cursor: pointer; font-family: inherit; text-align: left; transition: all 0.15s; display: flex; align-items: center; gap: 8px; }
+    .action-btn:hover { border-color: #3f3f46; background: #27272a; }
+    .action-btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .action-btn.primary:hover { background: #1d4ed8; }
+    .action-btn.success { background: #16a34a; border-color: #16a34a; color: #fff; }
+
+    /* Domain Bars */
+    .domains-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .domains-card h3 { font-size: 13px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+    .domain-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+    .domain-label { width: 180px; font-size: 12px; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .domain-bar { flex: 1; height: 8px; background: #27272a; border-radius: 4px; overflow: hidden; }
+    .domain-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+    .domain-fill.good { background: #22c55e; }
+    .domain-fill.warn { background: #eab308; }
+    .domain-fill.bad { background: #ef4444; }
+    .domain-pct { width: 40px; text-align: right; font-size: 12px; font-weight: 600; color: #d4d4d8; }
+
+    /* Findings List */
+    .findings-section { margin-bottom: 24px; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-bar select, .filter-bar input { padding: 7px 12px; background: #18181b; border: 1px solid #27272a; border-radius: 8px; color: #e4e4e7; font-size: 12px; font-family: inherit; }
+    .filter-bar input { flex: 1; min-width: 200px; }
+    .finding-card { background: #18181b; border: 1px solid #27272a; border-radius: 10px; margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s; }
+    .finding-card:hover { border-color: #3f3f46; }
+    .finding-header { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+    .finding-header .sev-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+    .sev-badge.P0 { background: #ef444422; color: #fca5a5; }
+    .sev-badge.P1 { background: #f9731622; color: #fdba74; }
+    .sev-badge.P2 { background: #eab30822; color: #fde047; }
+    .sev-badge.P3 { background: #3b82f622; color: #93c5fd; }
+    .finding-title { flex: 1; font-size: 13px; font-weight: 500; color: #e4e4e7; }
+    .finding-meta { font-size: 11px; color: #52525b; }
+    .finding-refs { display: flex; gap: 4px; }
+    .ref-tag { font-size: 9px; padding: 2px 6px; background: #27272a; border-radius: 4px; color: #71717a; }
+    .finding-detail { display: none; padding: 0 16px 16px; border-top: 1px solid #1c1c22; }
+    .finding-detail.open { display: block; padding-top: 12px; }
+    .finding-detail pre { background: #09090b; padding: 12px; border-radius: 8px; font-size: 12px; overflow-x: auto; font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace; color: #a1a1aa; margin: 8px 0; border: 1px solid #1c1c22; }
+    .finding-detail .remed { background: #16a34a0d; border: 1px solid #16a34a33; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 13px; color: #bbf7d0; }
+    .finding-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .finding-actions button { padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #27272a; background: #18181b; color: #d4d4d8; font-family: inherit; transition: all 0.15s; }
+    .finding-actions button:hover { border-color: #3f3f46; }
+    .finding-actions .fix-btn { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .finding-actions .copy-btn { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+    /* Settings */
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .settings-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; }
+    .settings-card h3 { font-size: 13px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 11px; color: #71717a; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field input, .field select { width: 100%; padding: 8px 12px; background: #09090b; border: 1px solid #3f3f46; border-radius: 8px; color: #e4e4e7; font-size: 13px; font-family: inherit; }
+    .save-btn { padding: 9px 20px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+
+    /* Panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Scan History */
+    .history-card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1c1c22; font-size: 12px; }
+    .history-item:last-child { border-bottom: none; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #18181b; border: 1px solid #27272a; padding: 12px 20px; border-radius: 10px; font-size: 13px; color: #e4e4e7; z-index: 1000; opacity: 0; transform: translateY(10px); transition: all 0.3s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-color: #16a34a; }
+
+    .empty { text-align: center; padding: 48px; color: #52525b; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .settings-grid { grid-template-columns: 1fr; }
+      .scan-row { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🛡️ AI Compliance Guardian</h1>
-    <p class="subtitle">Autonomous security, privacy & compliance auditing — powered by Karpathy autoresearch + gstack methodology</p>
+    <header>
+      <h1>🛡️ AI Compliance Guardian</h1>
+      <div class="nav">
+        <button class="nav-btn active" onclick="showPanel('scan')">Scan</button>
+        <button class="nav-btn" onclick="showPanel('findings')">Findings</button>
+        <button class="nav-btn" onclick="showPanel('reports')">Reports</button>
+        <button class="nav-btn" onclick="showPanel('settings')">Settings</button>
+      </div>
+    </header>
 
-    <div class="tabs">
-      <div class="tab active" onclick="showPanel('overview')">Overview</div>
-      <div class="tab" onclick="showPanel('findings')">Findings</div>
-      <div class="tab" onclick="showPanel('settings')">Settings</div>
-    </div>
-
-    <!-- Overview Panel -->
-    <div id="overviewPanel" class="active">
-      <div class="grid">
-        <div>
-          <div class="card" style="margin-bottom:16px">
-            <h2>Compliance Score</h2>
-            <div class="score-big" id="mainScore">--</div>
-            <div style="margin-top:8px">
-              <div class="stat-row"><span>Open Findings</span><span id="openCount">0</span></div>
-              <div class="stat-row"><span>🔴 Critical (P0)</span><span id="p0Count">0</span></div>
-              <div class="stat-row"><span>🟠 High (P1)</span><span id="p1Count">0</span></div>
-              <div class="stat-row"><span>🟡 Medium (P2)</span><span id="p2Count">0</span></div>
-              <div class="stat-row"><span>🔵 Low (P3)</span><span id="p3Count">0</span></div>
-            </div>
+    <!-- Scan Panel -->
+    <div id="panel-scan" class="panel active">
+      <div class="scan-bar">
+        <h2>Scan a Target</h2>
+        <div class="scan-row">
+          <div class="scan-input-wrap">
+            <label>GitHub URL or Live URL</label>
+            <input class="scan-input" id="scanTarget" type="text" placeholder="https://github.com/owner/repo or https://myapp.com">
           </div>
-          <div class="card">
-            <h2>Quick Actions</h2>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <button class="btn-primary" onclick="runScan()" style="width:100%">🔍 Run Full Scan</button>
-              <button class="btn-success" onclick="showPanel('findings')" style="width:100%">📋 View Findings</button>
-              <button class="btn-secondary" onclick="showPanel('settings')" style="width:100%">⚙️ Settings</button>
-            </div>
+          <select class="scan-select" id="scanPreset">
+            <option value="full">Full Scan</option>
+            <option value="quick">Quick (Critical Only)</option>
+            <option value="gdpr">GDPR</option>
+            <option value="soc2">SOC 2</option>
+            <option value="eu-ai-act">EU AI Act</option>
+            <option value="owasp-llm">OWASP LLM</option>
+          </select>
+          <button class="scan-btn" id="scanBtn" onclick="startScan()">Scan Now</button>
+        </div>
+        <div class="scan-options">
+          <label class="scan-radio"><input type="radio" name="scanType" value="source" checked> Source Code (GitHub)</label>
+          <label class="scan-radio"><input type="radio" name="scanType" value="url"> Live URL (DAST)</label>
+          <label class="scan-radio"><input type="radio" name="scanType" value="local"> Local Directory</label>
+        </div>
+        <div class="scan-progress" id="scanProgress">
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+          <div class="progress-text" id="progressText">Scanning...</div>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="score-card">
+          <div class="score-gauge">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle class="bg" cx="60" cy="60" r="52"/>
+              <circle class="fg" id="scoreArc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+            </svg>
+            <div class="score-value" id="scoreValue">--</div>
+          </div>
+          <div class="score-grade" id="scoreGrade">NO DATA</div>
+        </div>
+
+        <div class="findings-summary">
+          <h3>Findings Overview</h3>
+          <div class="severity-grid">
+            <div class="sev-item"><div class="sev-dot P0"></div><span class="sev-label">Critical</span><span class="sev-count" id="cntP0">0</span></div>
+            <div class="sev-item"><div class="sev-dot P1"></div><span class="sev-label">High</span><span class="sev-count" id="cntP1">0</span></div>
+            <div class="sev-item"><div class="sev-dot P2"></div><span class="sev-label">Medium</span><span class="sev-count" id="cntP2">0</span></div>
+            <div class="sev-item"><div class="sev-dot P3"></div><span class="sev-label">Low</span><span class="sev-count" id="cntP3">0</span></div>
           </div>
         </div>
-        <div>
-          <div class="card">
-            <h2>Domain Compliance</h2>
-            <div id="domainBars"></div>
-          </div>
+
+        <div class="actions-card">
+          <h3>Quick Actions</h3>
+          <button class="action-btn success" onclick="fixAll()">🔧 Auto-Fix All Findings</button>
+          <button class="action-btn" onclick="downloadPDF()">📄 Download PDF Report</button>
+          <button class="action-btn" onclick="exportCSV()">📊 Export CSV</button>
+          <button class="action-btn" onclick="showPanel('findings')">📋 Browse Findings</button>
         </div>
+      </div>
+
+      <!-- Domain Compliance -->
+      <div class="domains-card">
+        <h3>Domain Compliance — 10 Audit Domains</h3>
+        <div id="domainBars"></div>
+      </div>
+
+      <!-- Scan History -->
+      <div class="history-card">
+        <h3 style="font-size:13px;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">Recent Scans</h3>
+        <div id="scanHistory"><div class="empty">No scans yet. Enter a URL above to get started.</div></div>
       </div>
     </div>
 
     <!-- Findings Panel -->
-    <div id="findingsPanel">
-      <div class="actions-bar">
-        <button class="btn-primary" onclick="runScan()">🔍 Scan Now</button>
-        <button class="btn-success" onclick="fixAll()">🔧 Auto-Fix All</button>
-      </div>
+    <div id="panel-findings" class="panel">
       <div class="filter-bar">
-        <select id="filterSeverity" onchange="renderFindings()">
-          <option value="">All Severities</option>
-          <option value="P0">P0 Critical</option>
-          <option value="P1">P1 High</option>
-          <option value="P2">P2 Medium</option>
-          <option value="P3">P3 Low</option>
-        </select>
-        <select id="filterDomain" onchange="renderFindings()">
-          <option value="">All Domains</option>
-          <option value="1">D01: Governance</option>
-          <option value="2">D02: Risk Management</option>
-          <option value="3">D03: Lifecycle Security</option>
-          <option value="4">D04: Data Security</option>
-          <option value="5">D05: Model Integrity</option>
-          <option value="6">D06: Access Control</option>
-          <option value="7">D07: Infrastructure</option>
-          <option value="8">D08: Monitoring</option>
-          <option value="9">D09: Supply Chain</option>
-          <option value="10">D10: Compliance</option>
-        </select>
-        <select id="filterStatus" onchange="renderFindings()">
-          <option value="">All Status</option>
-          <option value="open">Open</option>
-          <option value="fixed">Fixed</option>
-          <option value="in_progress">In Progress</option>
-        </select>
-        <input type="text" id="filterSearch" placeholder="Search findings..." oninput="renderFindings()" style="flex:1">
+        <select id="fSev" onchange="renderFindings()"><option value="">All Severities</option><option value="P0">P0 Critical</option><option value="P1">P1 High</option><option value="P2">P2 Medium</option><option value="P3">P3 Low</option></select>
+        <select id="fDom" onchange="renderFindings()"><option value="">All Domains</option><option value="1">D01 Governance</option><option value="2">D02 Risk Mgmt</option><option value="3">D03 Lifecycle</option><option value="4">D04 Data Security</option><option value="5">D05 Model Integrity</option><option value="6">D06 Access Control</option><option value="7">D07 Infrastructure</option><option value="8">D08 Monitoring</option><option value="9">D09 Supply Chain</option><option value="10">D10 Compliance</option></select>
+        <select id="fStat" onchange="renderFindings()"><option value="">All Status</option><option value="open">Open</option><option value="fixed">Fixed</option><option value="in_progress">In Progress</option></select>
+        <input type="text" id="fSearch" placeholder="Search findings..." oninput="renderFindings()">
       </div>
-      <div id="findingsList"></div>
+      <div class="findings-section" id="findingsList"></div>
+    </div>
+
+    <!-- Reports Panel -->
+    <div id="panel-reports" class="panel">
+      <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="actions-card">
+          <h3>Compliance Report</h3>
+          <p style="font-size:13px;color:#71717a;margin-bottom:12px">Full audit report with findings, domain scores, remediation roadmap, and standards mapping.</p>
+          <button class="action-btn primary" onclick="downloadPDF()">📄 Download PDF Report</button>
+          <button class="action-btn" onclick="viewReport()">👁️ View in Browser</button>
+        </div>
+        <div class="actions-card">
+          <h3>Data Export</h3>
+          <p style="font-size:13px;color:#71717a;margin-bottom:12px">Export findings as CSV or JSON for integration with GRC tools, SIEM, or custom dashboards.</p>
+          <button class="action-btn" onclick="exportCSV()">📊 Export CSV</button>
+          <button class="action-btn" onclick="exportJSON()">🔗 Export JSON</button>
+        </div>
+        <div class="actions-card">
+          <h3>Standards Mapping</h3>
+          <p style="font-size:13px;color:#71717a;margin-bottom:12px">View how findings map to ISO 42001, NIST AI RMF, OWASP LLM, GDPR, SOC 2.</p>
+          <button class="action-btn" onclick="viewReport()">📋 View Mapping</button>
+        </div>
+      </div>
     </div>
 
     <!-- Settings Panel -->
-    <div id="settingsPanel">
-      <div class="grid" style="grid-template-columns:1fr 1fr">
-        <div class="card">
-          <h2>API Keys</h2>
-          <div class="field">
-            <label>Claude API Key</label>
-            <input type="password" id="claudeKey" placeholder="sk-ant-api03-...">
-          </div>
-          <div class="field">
-            <label>Codex API Key</label>
-            <input type="password" id="codexKey" placeholder="sk-...">
-          </div>
-          <div class="field">
-            <label>Model</label>
-            <select id="model">
-              <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (fast, recommended)</option>
-              <option value="claude-opus-4-6">Claude Opus 4.6 (thorough)</option>
-              <option value="claude-haiku-4-5">Claude Haiku 4.5 (cheapest)</option>
-            </select>
-          </div>
-          <button class="btn-primary" onclick="saveConfig()">Save Keys</button>
+    <div id="panel-settings" class="panel">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>API Keys</h3>
+          <div class="field"><label>Claude API Key</label><input type="password" id="cfgClaude" placeholder="sk-ant-api03-..."></div>
+          <div class="field"><label>Codex API Key</label><input type="password" id="cfgCodex" placeholder="sk-..."></div>
+          <div class="field"><label>Model</label><select id="cfgModel"><option value="claude-sonnet-4-6">Claude Sonnet 4.6 (fast)</option><option value="claude-opus-4-6">Claude Opus 4.6 (thorough)</option><option value="claude-haiku-4-5">Claude Haiku 4.5 (cheap)</option></select></div>
+          <button class="save-btn" onclick="saveConfig()">Save API Keys</button>
         </div>
-        <div class="card">
-          <h2>Autofix Settings</h2>
-          <div class="field">
-            <label>Auto-Fix</label>
-            <select id="autoFix">
-              <option value="true">Enabled — fix findings automatically</option>
-              <option value="false">Disabled — scan only, manual fixes</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Confidence Threshold (%)</label>
-            <input type="number" id="confidence" value="85" min="50" max="100">
-          </div>
-          <div class="field">
-            <label>Max Fix Iterations</label>
-            <input type="number" id="maxIter" value="10" min="1" max="50">
-          </div>
-          <div class="field">
-            <label>Time Budget per Fix (seconds)</label>
-            <input type="number" id="timeBudget" value="300" min="30" max="1800">
-          </div>
-          <button class="btn-primary" onclick="saveConfig()">Save Settings</button>
+        <div class="settings-card">
+          <h3>Autofix Configuration</h3>
+          <div class="field"><label>Auto-Fix Mode</label><select id="cfgAutofix"><option value="true">Enabled</option><option value="false">Disabled (scan only)</option></select></div>
+          <div class="field"><label>Confidence Threshold (%)</label><input type="number" id="cfgConf" value="85" min="50" max="100"></div>
+          <div class="field"><label>Max Iterations per Finding</label><input type="number" id="cfgIter" value="10" min="1" max="50"></div>
+          <div class="field"><label>Time Budget per Fix (seconds)</label><input type="number" id="cfgTime" value="300" min="30" max="1800"></div>
+          <button class="save-btn" onclick="saveConfig()">Save Settings</button>
         </div>
       </div>
     </div>
   </div>
 
+  <div class="toast" id="toast"></div>
+
   <script>
     const API = window.location.origin;
     let findings = [];
-    const DOMAIN_NAMES = {
-      1:'Governance',2:'Risk Mgmt',3:'Lifecycle',4:'Data Security',5:'Model Integrity',
-      6:'Access Control',7:'Infrastructure',8:'Monitoring',9:'Supply Chain',10:'Compliance'
-    };
+    let scanHistory = JSON.parse(localStorage.getItem('guardian_history') || '[]');
+    const DN = {1:'Governance',2:'Risk Mgmt',3:'Lifecycle Security',4:'Data Security',5:'Model Integrity',6:'Access Control',7:'Infrastructure',8:'Monitoring',9:'Supply Chain',10:'Regulatory Compliance'};
 
     function showPanel(name) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('overviewPanel').classList.remove('active');
-      document.getElementById('findingsPanel').classList.remove('active');
-      document.getElementById('settingsPanel').classList.remove('active');
-      document.getElementById(name + 'Panel').classList.add('active');
-      document.querySelectorAll('.tab')[{overview:0,findings:1,settings:2}[name]].classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+      const idx = {scan:0,findings:1,reports:2,settings:3}[name];
+      document.querySelectorAll('.nav-btn')[idx].classList.add('active');
     }
 
-    async function loadData() {
-      try {
-        const [fRes, sRes, cRes] = await Promise.all([
-          fetch(`${API}/api/findings`), fetch(`${API}/api/score`), fetch(`${API}/api/config`)
-        ]);
-        findings = await fRes.json();
-        const score = await sRes.json();
-        const config = await cRes.json();
-        renderOverview(score);
-        renderFindings();
-        renderConfig(config);
-      } catch { console.log('API not ready'); }
+    function toast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'toast show' + (type ? ' ' + type : '');
+      setTimeout(() => t.className = 'toast', 3000);
     }
 
-    function renderOverview(score) {
-      const el = document.getElementById('mainScore');
-      const s = score.composite || 0;
-      el.textContent = s + '%';
-      el.className = 'score-big ' + (s >= 90 ? 'good' : s >= 70 ? 'warn' : 'bad');
+    function setScore(score) {
+      const v = score.composite || 0;
+      document.getElementById('scoreValue').textContent = Math.round(v) + '%';
+      const arc = document.getElementById('scoreArc');
+      const offset = 326.7 - (326.7 * v / 100);
+      arc.style.strokeDashoffset = offset;
+      arc.className.baseVal = 'fg ' + (v >= 90 ? 'good' : v >= 70 ? 'warn' : 'bad');
+      const grades = {90:'A — Excellent',80:'B — Good',70:'C — Fair',60:'D — Poor',0:'F — Critical'};
+      const g = v >= 90 ? 90 : v >= 80 ? 80 : v >= 70 ? 70 : v >= 60 ? 60 : 0;
+      document.getElementById('scoreGrade').textContent = grades[g];
+    }
 
-      const open = findings.filter(f => f.status === 'open');
-      document.getElementById('openCount').textContent = open.length;
-      document.getElementById('p0Count').textContent = open.filter(f => f.severity === 'P0').length;
-      document.getElementById('p1Count').textContent = open.filter(f => f.severity === 'P1').length;
-      document.getElementById('p2Count').textContent = open.filter(f => f.severity === 'P2').length;
-      document.getElementById('p3Count').textContent = open.filter(f => f.severity === 'P3').length;
-
-      const bars = document.getElementById('domainBars');
-      bars.innerHTML = '';
+    function setDomains(domains) {
+      const el = document.getElementById('domainBars');
+      el.innerHTML = '';
       for (let d = 1; d <= 10; d++) {
-        const ds = score.domains?.[d] ?? 100;
-        const cls = ds >= 90 ? 'good' : ds >= 70 ? 'warn' : 'bad';
-        bars.innerHTML += `<div class="domain-bar">
-          <span style="width:100px;color:#888">D${String(d).padStart(2,'0')} ${DOMAIN_NAMES[d]}</span>
-          <div class="bar"><div class="bar-fill ${cls}" style="width:${ds}%"></div></div>
-          <span style="width:35px;text-align:right">${ds}%</span>
-        </div>`;
+        const s = domains?.[d] ?? 100;
+        const cls = s >= 90 ? 'good' : s >= 70 ? 'warn' : 'bad';
+        el.innerHTML += `<div class="domain-row"><span class="domain-label">D${String(d).padStart(2,'0')} ${DN[d]}</span><div class="domain-bar"><div class="domain-fill ${cls}" style="width:${s}%"></div></div><span class="domain-pct">${s}%</span></div>`;
       }
+    }
+
+    function setCounts(f) {
+      const open = f.filter(x => x.status === 'open');
+      document.getElementById('cntP0').textContent = open.filter(x => x.severity === 'P0').length;
+      document.getElementById('cntP1').textContent = open.filter(x => x.severity === 'P1').length;
+      document.getElementById('cntP2').textContent = open.filter(x => x.severity === 'P2').length;
+      document.getElementById('cntP3').textContent = open.filter(x => x.severity === 'P3').length;
     }
 
     function renderFindings() {
-      const sev = document.getElementById('filterSeverity').value;
-      const dom = document.getElementById('filterDomain').value;
-      const stat = document.getElementById('filterStatus').value;
-      const search = document.getElementById('filterSearch').value.toLowerCase();
-
-      let filtered = findings;
-      if (sev) filtered = filtered.filter(f => f.severity === sev);
-      if (dom) filtered = filtered.filter(f => f.domain == dom);
-      if (stat) filtered = filtered.filter(f => f.status === stat);
-      if (search) filtered = filtered.filter(f =>
-        (f.title||'').toLowerCase().includes(search) ||
-        (f.file||'').toLowerCase().includes(search) ||
-        (f.id||'').toLowerCase().includes(search)
-      );
+      const sev = document.getElementById('fSev').value;
+      const dom = document.getElementById('fDom').value;
+      const stat = document.getElementById('fStat').value;
+      const q = document.getElementById('fSearch').value.toLowerCase();
+      let f = findings;
+      if (sev) f = f.filter(x => x.severity === sev);
+      if (dom) f = f.filter(x => x.domain == dom);
+      if (stat) f = f.filter(x => x.status === stat);
+      if (q) f = f.filter(x => (x.title||'').toLowerCase().includes(q) || (x.file||'').toLowerCase().includes(q) || (x.id||'').toLowerCase().includes(q));
 
       const el = document.getElementById('findingsList');
-      if (filtered.length === 0) {
-        el.innerHTML = '<div class="empty">No findings match your filters. Run a scan to discover issues.</div>';
-        return;
-      }
+      if (!f.length) { el.innerHTML = '<div class="empty">No findings match filters. Run a scan to discover issues.</div>'; return; }
 
-      el.innerHTML = filtered.map(f => `
-        <div class="finding" onclick="toggleDetail('${f.id}')">
-          <div class="header">
-            <span class="title">${f.title || f.id}</span>
-            <div style="display:flex;gap:4px">
-              <span class="badge ${f.severity}">${f.severity}</span>
-              <span class="badge ${f.status}">${f.status}</span>
-            </div>
+      el.innerHTML = f.map(x => `
+        <div class="finding-card">
+          <div class="finding-header" onclick="this.nextElementSibling.classList.toggle('open')">
+            <span class="sev-badge ${x.severity}">${x.severity}</span>
+            <span class="finding-title">${esc(x.title || x.id)}</span>
+            <span class="finding-meta">${x.file || ''}${x.line ? ':'+x.line : ''}</span>
+            <div class="finding-refs">${(x.standard_refs||[]).slice(0,3).map(r => `<span class="ref-tag">${r}</span>`).join('')}</div>
           </div>
-          <div class="meta">${f.id} · D${String(f.domain).padStart(2,'0')} ${DOMAIN_NAMES[f.domain]||''} · ${f.file||''}:${f.line||''} · ${f.category||''}</div>
-          <div class="std-refs">${(f.standard_refs||[]).map(r => `<span class="std-ref">${r}</span>`).join('')}</div>
-          <div class="detail-panel" id="detail-${f.id}">
-            <h3>Description</h3>
-            <p style="font-size:13px;color:#bbb">${f.description||''}</p>
-            <h3 style="margin-top:10px">Evidence</h3>
-            <pre>${escapeHtml(f.evidence||'')}</pre>
-            <div class="remediation">
-              <strong>Remediation:</strong> ${f.remediation||'No remediation specified'}
-            </div>
-            <div style="margin-top:10px;display:flex;gap:6px">
-              ${f.auto_fixable ? `<button class="btn-success" onclick="fixFinding('${f.id}')">🔧 Auto-Fix</button>` : ''}
-              <button class="btn-secondary" onclick="markFalsePositive('${f.id}')">❌ False Positive</button>
-              <button class="btn-secondary" onclick="markFixed('${f.id}')">✅ Mark Fixed</button>
+          <div class="finding-detail">
+            <p style="color:#a1a1aa;font-size:13px">${esc(x.description || '')}</p>
+            <pre>${esc(x.evidence || '')}</pre>
+            <div class="remed"><strong>Fix:</strong> ${esc(x.remediation || 'No remediation specified')}</div>
+            <div class="finding-actions">
+              ${x.auto_fixable ? '<button class="fix-btn" onclick="fixOne(\''+x.id+'\')">🔧 Auto-Fix</button>' : ''}
+              <button class="copy-btn" onclick="copyPrompt(\''+x.id+'\')">📋 Copy Fix Prompt</button>
+              <button onclick="markStatus('${x.id}','fixed')">✅ Mark Fixed</button>
+              <button onclick="markStatus('${x.id}','false_positive')">❌ False Positive</button>
             </div>
           </div>
         </div>
       `).join('');
     }
 
-    function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    function toggleDetail(id) {
-      const el = document.getElementById('detail-' + id);
-      if (el) el.classList.toggle('visible');
+    function renderHistory() {
+      const el = document.getElementById('scanHistory');
+      if (!scanHistory.length) { el.innerHTML = '<div class="empty">No scans yet. Enter a URL above to get started.</div>'; return; }
+      el.innerHTML = scanHistory.slice(0, 5).map(h => `<div class="history-item"><span style="color:#a1a1aa">${h.target}</span><span>${h.count} findings</span><span style="color:#71717a">${new Date(h.ts).toLocaleString()}</span></div>`).join('');
     }
 
-    function renderConfig(config) {
-      if (config.claude_api_key) document.getElementById('claudeKey').value = config.claude_api_key;
-      if (config.codex_api_key) document.getElementById('codexKey').value = config.codex_api_key;
-      if (config.model) document.getElementById('model').value = config.model;
-      if (config.auto_fix) document.getElementById('autoFix').value = config.auto_fix;
-      if (config.confidence_threshold) document.getElementById('confidence').value = config.confidence_threshold;
-      if (config.max_iterations) document.getElementById('maxIter').value = config.max_iterations;
-      if (config.time_budget_seconds) document.getElementById('timeBudget').value = config.time_budget_seconds;
+    async function loadData() {
+      try {
+        const [fRes, sRes, cRes] = await Promise.all([fetch(`${API}/api/findings`), fetch(`${API}/api/score`), fetch(`${API}/api/config`)]);
+        findings = await fRes.json();
+        const score = await sRes.json();
+        const config = await cRes.json();
+        setScore(score); setDomains(score.domains); setCounts(findings); renderFindings(); renderHistory();
+        if (config.claude_api_key) document.getElementById('cfgClaude').value = config.claude_api_key;
+        if (config.model) document.getElementById('cfgModel').value = config.model;
+      } catch { /* API not ready */ }
+    }
+
+    async function startScan() {
+      const target = document.getElementById('scanTarget').value.trim();
+      const scanType = document.querySelector('input[name="scanType"]:checked')?.value || 'source';
+      const btn = document.getElementById('scanBtn');
+      const prog = document.getElementById('scanProgress');
+
+      btn.disabled = true; btn.textContent = 'Scanning...';
+      prog.classList.add('active');
+      document.getElementById('progressText').textContent = 'Initializing scan...';
+
+      try {
+        let endpoint = '/api/scan';
+        let body = {};
+
+        if (scanType === 'source' && target.includes('github.com')) {
+          endpoint = '/api/scan/github';
+          body = { url: target };
+          document.getElementById('progressText').textContent = 'Cloning repository...';
+        } else if (scanType === 'url' && target.startsWith('http')) {
+          endpoint = '/api/scan/url';
+          body = { url: target };
+          document.getElementById('progressText').textContent = 'Scanning live URL...';
+        } else {
+          document.getElementById('progressText').textContent = 'Running all scanners...';
+        }
+
+        const res = await fetch(`${API}${endpoint}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json();
+
+        scanHistory.unshift({ target: target || 'Local scan', count: data.count || data.findings?.length || 0, ts: new Date().toISOString() });
+        localStorage.setItem('guardian_history', JSON.stringify(scanHistory.slice(0, 10)));
+
+        toast(`Scan complete: ${data.count || data.findings?.length || 0} findings`, 'success');
+        await loadData();
+      } catch (e) { toast('Scan failed: ' + e.message); }
+
+      btn.disabled = false; btn.textContent = 'Scan Now';
+      prog.classList.remove('active');
     }
 
     async function saveConfig() {
-      const config = {
-        claude_api_key: document.getElementById('claudeKey').value,
-        codex_api_key: document.getElementById('codexKey').value,
-        model: document.getElementById('model').value,
-        auto_fix: document.getElementById('autoFix').value,
-        confidence_threshold: document.getElementById('confidence').value,
-        max_iterations: document.getElementById('maxIter').value,
-        time_budget_seconds: document.getElementById('timeBudget').value,
-      };
+      const config = { claude_api_key: document.getElementById('cfgClaude').value, codex_api_key: document.getElementById('cfgCodex').value, model: document.getElementById('cfgModel').value, auto_fix: document.getElementById('cfgAutofix').value, confidence_threshold: document.getElementById('cfgConf').value, max_iterations: document.getElementById('cfgIter').value, time_budget_seconds: document.getElementById('cfgTime').value };
       await fetch(`${API}/api/config`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(config) });
-      alert('Settings saved!');
+      toast('Settings saved', 'success');
     }
 
-    async function runScan() {
-      const btn = event.target;
-      btn.textContent = '🔄 Scanning...';
-      btn.disabled = true;
-      try {
-        const res = await fetch(`${API}/api/scan`, { method: 'POST' });
-        const data = await res.json();
-        alert(`Scan complete: ${data.count} findings`);
-        await loadData();
-      } catch (e) { alert('Scan failed: ' + e.message); }
-      btn.textContent = '🔍 Run Full Scan';
-      btn.disabled = false;
+    async function fixOne(id) { const r = await fetch(`${API}/api/fix/${id}`, { method: 'POST' }); const d = await r.json(); toast(d.message || d.error); await loadData(); }
+    function fixAll() { toast('Configure Claude API key in Settings to enable auto-fix'); showPanel('settings'); }
+
+    function copyPrompt(id) {
+      const f = findings.find(x => x.id === id);
+      if (!f) return;
+      const prompt = `Fix this security issue in my codebase:\n\nFile: ${f.file}:${f.line}\nIssue: ${f.title}\nSeverity: ${f.severity}\nDescription: ${f.description}\n\nEvidence:\n${f.evidence}\n\nRemediation:\n${f.remediation}\n\nPlease provide a minimal fix that resolves this issue without breaking existing functionality.`;
+      navigator.clipboard.writeText(prompt).then(() => toast('Fix prompt copied to clipboard', 'success'));
     }
 
-    async function fixFinding(id) {
-      const res = await fetch(`${API}/api/fix/${id}`, { method: 'POST' });
-      const data = await res.json();
-      alert(data.message || data.error);
-      await loadData();
-    }
+    function markStatus(id, status) { const f = findings.find(x => x.id === id); if (f) { f.status = status; renderFindings(); setCounts(findings); toast(`${id} marked as ${status}`, 'success'); } }
 
-    function fixAll() { alert('Auto-fix all requires Claude API key. Configure in Settings tab.'); }
-    function markFalsePositive(id) { updateFindingStatus(id, 'false_positive'); }
-    function markFixed(id) { updateFindingStatus(id, 'fixed'); }
-
-    async function updateFindingStatus(id, status) {
-      // Client-side update for now
-      const f = findings.find(f => f.id === id);
-      if (f) f.status = status;
-      renderFindings();
+    function downloadPDF() { window.open(`${API}/api/report/html`, '_blank'); }
+    function viewReport() { window.open(`${API}/api/report/html`, '_blank'); }
+    function exportJSON() { window.open(`${API}/api/report/json`, '_blank'); }
+    function exportCSV() {
+      const header = 'id,severity,domain,title,file,line,status,category,standard_refs\n';
+      const rows = findings.map(f => `${f.id},${f.severity},${f.domain},"${(f.title||'').replace(/"/g,'""')}","${f.file||''}",${f.line||''},${f.status},${f.category||''},"${(f.standard_refs||[]).join('; ')}"`).join('\n');
+      const blob = new Blob([header + rows], { type: 'text/csv' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'guardian-findings.csv'; a.click();
     }
 
     loadData();
