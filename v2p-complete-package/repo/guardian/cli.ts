@@ -18,7 +18,6 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FINDINGS_DIR = path.join(__dirname, 'findings');
-const PRESETS_DIR = path.join(__dirname, 'presets');
 
 // Ensure directories exist
 fs.mkdirSync(FINDINGS_DIR, { recursive: true });
@@ -62,7 +61,9 @@ interface Finding {
 function readFindings(): Finding[] {
   const file = path.join(FINDINGS_DIR, 'findings.jsonl');
   if (!fs.existsSync(file)) return [];
-  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => {
+    try { return JSON.parse(l); } catch { return null; }
+  }).filter((f): f is Finding => f !== null);
 }
 
 function computeScore(findings: Finding[]): { composite: number; domains: Record<number, number> } {
@@ -105,8 +106,10 @@ async function cmdScan(args: string[]) {
   // GitHub repo scan
   if (githubIdx >= 0 && args[githubIdx + 1]) {
     const githubUrl = args[githubIdx + 1];
-    console.log(isJson ? '' : `\n🛡️  Guardian Scan (GitHub)\n   Repo: ${githubUrl}\n`);
-    console.log(isJson ? '' : '   Cloning repository...');
+    if (!isJson) {
+      console.log(`\n🛡️  Guardian Scan (GitHub)\n   Repo: ${githubUrl}\n`);
+      console.log('   Cloning repository...');
+    }
     const { scanGitHubRepo } = await import('./scanners/github-scanner.js');
     const result = await scanGitHubRepo(githubUrl);
     findings = result.findings;
@@ -116,14 +119,14 @@ async function cmdScan(args: string[]) {
   // DAST URL scan
   else if (urlIdx >= 0 && args[urlIdx + 1]) {
     const targetUrl = args[urlIdx + 1];
-    console.log(isJson ? '' : `\n🛡️  Guardian Scan (DAST)\n   URL: ${targetUrl}\n`);
+    if (!isJson) console.log(`\n🛡️  Guardian Scan (DAST)\n   URL: ${targetUrl}\n`);
     const { scan: dastScan } = await import('./scanners/dast-scanner.js');
     findings = await dastScan(targetUrl);
   }
   // Local directory scan (default)
   else {
     const targetDir = targetIdx >= 0 ? args[targetIdx + 1] : path.join(__dirname, '..', 'target', 'demo-app');
-    console.log(isJson ? '' : `\n🛡️  Guardian Scan\n   Target: ${targetDir}\n`);
+    if (!isJson) console.log(`\n🛡️  Guardian Scan\n   Target: ${targetDir}\n`);
     const { runAllScanners } = await import('./scanners/index.js');
     const result = await runAllScanners(targetDir);
     findings = result.findings;

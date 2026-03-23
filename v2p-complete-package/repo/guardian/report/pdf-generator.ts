@@ -106,13 +106,15 @@ interface RemediationWeek {
 function readFindings(): Finding[] {
   const file = path.join(FINDINGS_DIR, 'findings.jsonl');
   if (!fs.existsSync(file)) return [];
-  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => {
+    try { return JSON.parse(l); } catch { return null; }
+  }).filter((f): f is Finding => f !== null);
 }
 
 function readScore(): ScoreData {
   const file = path.join(FINDINGS_DIR, 'compliance-score.json');
   if (!fs.existsSync(file)) return { composite: 0, domains: {} };
-  return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  try { return JSON.parse(fs.readFileSync(file, 'utf-8')); } catch { return { composite: 0, domains: {} }; }
 }
 
 function getGrade(score: number): string {

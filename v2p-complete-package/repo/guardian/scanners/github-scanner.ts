@@ -1,19 +1,27 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import * as crypto from 'crypto';
+import { execFileSync } from 'child_process';
 import type { Finding } from './secret-scanner';
-import type { FullScanResult } from './index';
+
+// Inline the FullScanResult summary type to avoid circular dependency with index.ts
+interface ScanSummary {
+  P0: number;
+  P1: number;
+  P2: number;
+  P3: number;
+  byCategory: Record<string, number>;
+}
 
 interface GitHubScanResult {
   findings: Finding[];
-  score: FullScanResult['summary'];
+  score: ScanSummary;
   summary: {
     totalFindings: number;
     scanners: { name: string; findingCount: number; duration: number; error?: string }[];
     timestamp: string;
   };
-  tempDir: string;
 }
 
 /**
@@ -61,13 +69,20 @@ export async function scanGitHubRepo(
   branch?: string,
 ): Promise<GitHubScanResult> {
   const { owner, repo, cloneUrl } = parseGitHubUrl(githubUrl);
-  const tempDir = path.join(os.tmpdir(), `guardian-${Date.now()}`);
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'guardian-'));
 
   try {
-    // Clone the repository (shallow clone for speed)
+    // Validate branch name to prevent injection via execFileSync args
+    const SAFE_BRANCH = /^[A-Za-z0-9_./-]+$/;
     const targetBranch = branch || 'main';
+    if (!SAFE_BRANCH.test(targetBranch)) {
+      throw new Error(`Invalid branch name: "${targetBranch}". Branch names must match ${SAFE_BRANCH}`);
+    }
+
+    // Clone the repository (shallow clone for speed)
+    // Uses execFileSync to avoid shell interpretation (prevents command injection)
     try {
-      execSync(`git clone --depth 1 --branch ${targetBranch} ${cloneUrl} ${tempDir}`, {
+      execFileSync('git', ['clone', '--depth', '1', '--branch', targetBranch, cloneUrl, tempDir], {
         stdio: 'pipe',
         timeout: 60_000,
       });
@@ -75,7 +90,7 @@ export async function scanGitHubRepo(
       // If the specified branch (or default 'main') fails, try 'master' as fallback
       if (!branch) {
         try {
-          execSync(`git clone --depth 1 --branch master ${cloneUrl} ${tempDir}`, {
+          execFileSync('git', ['clone', '--depth', '1', '--branch', 'master', cloneUrl, tempDir], {
             stdio: 'pipe',
             timeout: 60_000,
           });
@@ -93,17 +108,16 @@ export async function scanGitHubRepo(
     // Get the HEAD commit SHA
     let commitSha = 'unknown';
     try {
-      commitSha = execSync('git rev-parse HEAD', { cwd: tempDir, stdio: 'pipe' })
+      commitSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: tempDir, stdio: 'pipe' })
         .toString()
         .trim();
     } catch {
       // Non-fatal — continue with 'unknown'
     }
 
-    // Dynamically import the index to call runAllScanners
-    // Using dynamic import so the module resolution works at runtime
+    // Dynamic import to avoid circular dependency (this module is aggregated by index.ts)
     const { runAllScanners } = await import('./index.js');
-    const scanResult: FullScanResult = await runAllScanners(tempDir);
+    const scanResult = await runAllScanners(tempDir);
 
     // Enrich findings with GitHub metadata
     const repoFullName = `${owner}/${repo}`;
@@ -130,7 +144,6 @@ export async function scanGitHubRepo(
       findings: enrichedFindings,
       score: scanResult.summary,
       summary,
-      tempDir,
     };
   } finally {
     // Clean up the temp directory

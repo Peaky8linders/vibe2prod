@@ -537,19 +537,18 @@ function extractEvidence(line: string): string {
 // Scanner
 // ---------------------------------------------------------------------------
 
-let findingCounter = 0;
-
 function createFinding(
+  counter: { value: number },
   pattern: InjectionPattern,
   filePath: string,
   lineNumber: number,
   line: string,
   targetDir: string,
 ): Finding {
-  findingCounter++;
+  counter.value++;
   const relativeFile = path.relative(targetDir, filePath);
   return {
-    id: `PINJ-${String(findingCounter).padStart(3, '0')}`,
+    id: `PINJ-${String(counter.value).padStart(3, '0')}`,
     domain: 5,
     control_id: `MODEL-${pattern.id}`,
     severity: pattern.severity,
@@ -566,7 +565,7 @@ function createFinding(
 }
 
 export async function scan(targetDir: string): Promise<Finding[]> {
-  findingCounter = 0;
+  const counter = { value: 0 };
   const findings: Finding[] = [];
   const files = collectFiles(targetDir);
 
@@ -596,7 +595,7 @@ export async function scan(targetDir: string): Promise<Finding[]> {
           if (pattern.contextRegex && !pattern.contextRegex.test(contextBlock)) {
             continue;
           }
-          findings.push(createFinding(pattern, filePath, i + 1, line, targetDir));
+          findings.push(createFinding(counter, pattern, filePath, i + 1, line, targetDir));
           break; // One finding per line to avoid duplicates
         }
       }
