@@ -1,0 +1,7 @@
+name: "EU AI Act Compliance"
+description: "Covers governance, risk management, model integrity, and regulatory compliance domains aligned with EU AI Act requirements for high-risk AI systems including risk classification, transparency, human oversight, and conformity assessment."
+domains:
+  - 1
+  - 2
+  - 5
+  - 10

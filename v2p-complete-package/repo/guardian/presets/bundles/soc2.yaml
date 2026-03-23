@@ -1,0 +1,8 @@
+name: "SOC 2 Readiness"
+description: "Covers governance, risk management, access control, infrastructure security, and monitoring domains aligned with SOC 2 Trust Service Criteria (security, availability, processing integrity, confidentiality, privacy)."
+domains:
+  - 1
+  - 2
+  - 6
+  - 7
+  - 8

@@ -1,0 +1,7 @@
+name: "OWASP LLM Top 10"
+description: "Covers model lifecycle security, data security, model integrity, and supply chain domains aligned with OWASP LLM Top 10 risks including prompt injection, insecure output handling, training data poisoning, model theft, and supply chain vulnerabilities."
+domains:
+  - 3
+  - 4
+  - 5
+  - 9

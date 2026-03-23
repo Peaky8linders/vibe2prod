@@ -1,0 +1,74 @@
+name: "Model Lifecycle Security"
+domain_id: 3
+standard_refs:
+  - "NIST SP 800-218"
+  - "ISO/IEC 42001:2023"
+  - "SOC 2"
+weight: 1.0
+
+controls:
+  - id: MLC-001
+    area: "Secure MDLC"
+    question: "Does the model development lifecycle include threat modeling, secure coding practices, and security testing at each phase?"
+    scan_type: code_scan
+    patterns:
+      - "threat.*model"
+      - "security.*review"
+      - "secure.*cod"
+      - "# ?TODO.*secur"
+      - "# ?FIXME.*vuln"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Threat model documents for AI/ML pipelines"
+      - "Secure coding guidelines for ML development"
+      - "Security testing results (SAST, DAST, fuzz testing)"
+      - "Security gate criteria and sign-off records"
+    remediation: "Integrate security into every MDLC phase: conduct threat modeling during design, enforce secure coding standards during development, perform security testing (SAST/DAST/fuzzing) before deployment, and require security sign-off at each gate."
+    semgrep_rules:
+      - "rules/ml-insecure-deserialization"
+      - "rules/pickle-load-untrusted"
+
+  - id: MLC-002
+    area: "Model Versioning"
+    question: "Are all model artifacts (code, weights, hyperparameters, training data references) versioned with integrity verification and reproducibility guarantees?"
+    scan_type: config_scan
+    patterns:
+      - "model.*version"
+      - "artifact.*registry"
+      - "mlflow"
+      - "dvc"
+      - "wandb"
+      - "model.*registry"
+      - "checksum"
+      - "sha256"
+    auto_scannable: true
+    severity: P1
+    evidence:
+      - "Model registry with version history"
+      - "Artifact integrity hashes (SHA-256)"
+      - "Reproducibility documentation (hyperparameters, data snapshots)"
+      - "Model lineage tracking records"
+    remediation: "Implement a model registry (e.g., MLflow, DVC, W&B) that versions all artifacts including code, weights, configurations, and training data references. Enforce integrity verification via cryptographic hashes and maintain reproducibility documentation."
+    semgrep_rules: []
+
+  - id: MLC-003
+    area: "Change Management"
+    question: "Is there a formal change management process for model updates requiring security sign-off, peer review, and rollback procedures?"
+    scan_type: config_scan
+    patterns:
+      - "change.*manage"
+      - "rollback"
+      - "canary.*deploy"
+      - "blue.*green"
+      - "approval.*gate"
+      - "sign.off"
+    auto_scannable: true
+    severity: P1
+    evidence:
+      - "Change management policy for AI/ML systems"
+      - "Approval workflow configurations"
+      - "Rollback procedure documentation and test results"
+      - "Change advisory board meeting records"
+    remediation: "Establish a change management process requiring security review and sign-off for all model updates. Implement automated rollback mechanisms, canary deployments, and peer review requirements. Maintain an audit trail of all model changes."
+    semgrep_rules: []

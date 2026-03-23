@@ -1,0 +1,82 @@
+name: "Monitoring, Logging & Incident Response"
+domain_id: 8
+standard_refs:
+  - "ISO/IEC 42001:2023"
+  - "ISO/IEC 27002:2022"
+  - "SOC 2"
+  - "NIST SP 800-61"
+weight: 1.2
+
+controls:
+  - id: MON-001
+    area: "Model Monitoring"
+    question: "Is continuous model monitoring implemented to detect performance degradation, data drift, concept drift, and anomalous predictions?"
+    scan_type: code_scan
+    patterns:
+      - "drift.*detect"
+      - "data.*drift"
+      - "concept.*drift"
+      - "model.*monitor"
+      - "performance.*degrad"
+      - "anomaly.*detect"
+      - "evidently"
+      - "whylabs"
+      - "nannyml"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Model monitoring platform configuration"
+      - "Drift detection alert thresholds and rules"
+      - "Performance degradation dashboards"
+      - "Anomalous prediction detection logs"
+      - "Automated retraining trigger documentation"
+    remediation: "Deploy continuous model monitoring covering data drift (feature distribution changes), concept drift (relationship shifts), performance metrics (accuracy, latency, throughput), and prediction anomalies. Set alert thresholds and configure automated escalation. Use tools like Evidently, WhyLabs, or NannyML."
+    semgrep_rules: []
+
+  - id: MON-002
+    area: "Security Logging"
+    question: "Are all AI system events logged to a centralized SIEM with tamper-proof storage, including model access, data queries, configuration changes, and inference requests?"
+    scan_type: config_scan
+    patterns:
+      - "siem"
+      - "log.*central"
+      - "audit.*log"
+      - "tamper.*proof"
+      - "immutable.*log"
+      - "worm"
+      - "log.*aggregat"
+      - "splunk"
+      - "elastic"
+      - "sentinel"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "SIEM configuration and log source inventory"
+      - "Tamper-proof log storage configuration (WORM)"
+      - "Log retention policy documentation"
+      - "AI-specific log schemas and correlation rules"
+      - "Log completeness verification reports"
+    remediation: "Centralize all AI system logs in a SIEM platform with tamper-proof (WORM) storage. Log model access, data queries, configuration changes, inference requests, and administrative actions. Define AI-specific correlation rules and detection signatures. Enforce minimum retention periods per compliance requirements."
+    semgrep_rules: []
+
+  - id: MON-003
+    area: "Incident Response"
+    question: "Does the incident response plan include AI-specific playbooks for model compromise, data poisoning, adversarial attacks, and model failure scenarios?"
+    scan_type: document_check
+    patterns:
+      - "incident.*response"
+      - "playbook"
+      - "runbook"
+      - "model.*compromise"
+      - "ai.*incident"
+      - "escalat"
+    auto_scannable: false
+    severity: P0
+    evidence:
+      - "AI-specific incident response playbooks"
+      - "Model compromise response procedures"
+      - "Adversarial attack response runbooks"
+      - "Incident response tabletop exercise records"
+      - "Post-incident review reports"
+    remediation: "Extend the incident response plan with AI-specific playbooks covering model compromise (emergency model rollback), data poisoning (training data quarantine), adversarial attacks (traffic filtering, model isolation), and model failure (fallback mechanisms). Conduct quarterly tabletop exercises."
+    semgrep_rules: []

@@ -1,0 +1,77 @@
+name: "Regulatory Compliance, Ethics & Responsible AI"
+domain_id: 10
+standard_refs:
+  - "GDPR"
+  - "EU AI Act"
+  - "NIST AI RMF"
+  - "ISO/IEC 42001:2023"
+weight: 1.0
+
+controls:
+  - id: REG-001
+    area: "Regulatory Mapping"
+    question: "Is there a compliance matrix mapping all applicable AI regulations (GDPR, EU AI Act, sector-specific) to implemented controls with gap analysis?"
+    scan_type: document_check
+    patterns:
+      - "compliance.*matrix"
+      - "regulatory.*map"
+      - "gap.*analysis"
+      - "eu.*ai.*act"
+      - "gdpr.*compliance"
+      - "regulatory.*register"
+    auto_scannable: false
+    severity: P0
+    evidence:
+      - "Regulatory compliance matrix"
+      - "Gap analysis reports with remediation plans"
+      - "Regulatory change monitoring process"
+      - "AI system risk classification under EU AI Act"
+      - "Cross-jurisdictional compliance assessment"
+    remediation: "Create a comprehensive compliance matrix mapping all applicable AI regulations to specific controls. Classify AI systems by risk level under the EU AI Act. Conduct gap analysis to identify compliance shortfalls. Establish a regulatory change monitoring process to track new and amended requirements."
+    semgrep_rules: []
+
+  - id: REG-002
+    area: "Responsible AI"
+    question: "Is there a post-deployment responsible AI monitoring program covering fairness, safety, performance, and societal impact with defined escalation and remediation procedures?"
+    scan_type: code_scan
+    patterns:
+      - "responsible.*ai"
+      - "fairness.*monitor"
+      - "safety.*monitor"
+      - "societal.*impact"
+      - "human.*oversight"
+      - "human.*in.*loop"
+      - "kill.*switch"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Post-deployment monitoring plan"
+      - "Fairness and safety metric dashboards"
+      - "Escalation and remediation procedures"
+      - "Human oversight mechanism documentation"
+      - "Societal impact assessment reports"
+    remediation: "Implement a post-deployment responsible AI monitoring program tracking fairness metrics, safety indicators, performance degradation, and societal impact signals. Define clear escalation thresholds and remediation procedures including model deactivation (kill switch). Ensure human oversight mechanisms are in place for high-risk decisions."
+    semgrep_rules: []
+
+  - id: REG-003
+    area: "Audit Trail"
+    question: "Is an immutable audit trail maintained for all AI system decisions, model changes, data modifications, and compliance-relevant events?"
+    scan_type: config_scan
+    patterns:
+      - "audit.*trail"
+      - "audit.*log"
+      - "immutable.*log"
+      - "decision.*log"
+      - "blockchain.*audit"
+      - "append.only"
+      - "tamper.*evident"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Immutable audit log system configuration"
+      - "Decision logging implementation for AI systems"
+      - "Audit trail completeness verification"
+      - "Retention policy compliance records"
+      - "Audit log access control documentation"
+    remediation: "Implement an immutable, append-only audit trail capturing all AI system decisions, model lifecycle events, data modifications, access events, and compliance actions. Use tamper-evident storage (cryptographic chaining, WORM storage). Define retention periods per regulatory requirements and restrict audit log access to authorized personnel."
+    semgrep_rules: []

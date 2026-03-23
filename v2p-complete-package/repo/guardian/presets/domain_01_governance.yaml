@@ -1,0 +1,64 @@
+name: "AI Governance & Accountability"
+domain_id: 1
+standard_refs:
+  - "ISO/IEC 42001:2023"
+  - "NIST AI RMF"
+weight: 1.0
+
+controls:
+  - id: GOV-001
+    area: "Organizational Structure"
+    question: "Does the organization have a documented AI governance policy defining oversight bodies, decision-making authority, and escalation paths?"
+    scan_type: document_check
+    patterns:
+      - "ai.governance.policy"
+      - "governance.*framework"
+      - "oversight.*committee"
+      - "ai.*board"
+    auto_scannable: false
+    severity: P0
+    evidence:
+      - "AI governance policy document"
+      - "Organizational chart showing AI oversight bodies"
+      - "Meeting minutes from governance committee"
+      - "Escalation procedures documentation"
+    remediation: "Establish an AI governance framework with a documented policy that defines oversight bodies, decision-making authority, escalation paths, and review cadence. Assign executive sponsorship and create a cross-functional AI governance committee."
+    semgrep_rules: []
+
+  - id: GOV-002
+    area: "Roles & Responsibilities"
+    question: "Is there a RACI matrix or equivalent defining roles and responsibilities for AI system development, deployment, monitoring, and decommissioning?"
+    scan_type: document_check
+    patterns:
+      - "raci"
+      - "roles.*responsibilities"
+      - "accountab"
+      - "ai.*owner"
+    auto_scannable: false
+    severity: P1
+    evidence:
+      - "RACI matrix for AI lifecycle stages"
+      - "Role descriptions for AI-related positions"
+      - "Documented approval workflows"
+      - "Responsibility assignment records"
+    remediation: "Create a RACI matrix covering all AI lifecycle phases (design, development, testing, deployment, monitoring, decommissioning). Ensure each AI system has a designated owner accountable for compliance and performance."
+    semgrep_rules: []
+
+  - id: GOV-003
+    area: "Ethical Principles"
+    question: "Has the organization adopted and published AI ethics principles covering fairness, transparency, accountability, privacy, and safety?"
+    scan_type: document_check
+    patterns:
+      - "ai.*ethic"
+      - "responsible.*ai"
+      - "fairness.*principle"
+      - "transparency.*policy"
+    auto_scannable: false
+    severity: P1
+    evidence:
+      - "AI ethics policy or charter"
+      - "Ethical review board charter"
+      - "Ethics impact assessment templates"
+      - "Public-facing responsible AI commitments"
+    remediation: "Develop and publish AI ethics principles aligned with organizational values and applicable regulations. Establish an ethics review board and require ethical impact assessments for high-risk AI systems."
+    semgrep_rules: []

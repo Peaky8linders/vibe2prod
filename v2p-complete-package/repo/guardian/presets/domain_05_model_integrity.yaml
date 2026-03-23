@@ -1,0 +1,78 @@
+name: "Model Integrity, Robustness & Adversarial Resistance"
+domain_id: 5
+standard_refs:
+  - "OWASP LLM Top 10"
+  - "NIST AI RMF"
+weight: 1.5
+
+controls:
+  - id: MINT-001
+    area: "Adversarial Testing"
+    question: "Is the AI system regularly tested against adversarial attacks including evasion, data poisoning, model inversion, and model extraction?"
+    scan_type: code_scan
+    patterns:
+      - "adversarial.*test"
+      - "adversarial.*attack"
+      - "evasion.*test"
+      - "poison.*detect"
+      - "model.*inversion"
+      - "model.*extraction"
+      - "red.team"
+      - "fuzz.*test"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Adversarial testing plan and schedule"
+      - "Red team exercise reports"
+      - "Evasion attack test results"
+      - "Data poisoning detection mechanisms"
+      - "Model inversion and extraction resistance test results"
+    remediation: "Establish a regular adversarial testing program covering evasion attacks (adversarial examples), data poisoning (training data manipulation), model inversion (privacy leakage), and model extraction (model stealing). Conduct red team exercises and integrate adversarial robustness testing into the CI/CD pipeline."
+    semgrep_rules: []
+
+  - id: MINT-002
+    area: "Model Explainability"
+    question: "Are explainability methods (XAI) implemented to provide interpretable outputs and support human oversight of AI decisions?"
+    scan_type: code_scan
+    patterns:
+      - "explainab"
+      - "interpretab"
+      - "shap"
+      - "lime"
+      - "feature.*importance"
+      - "attention.*visual"
+      - "counterfactual"
+      - "xai"
+    auto_scannable: true
+    severity: P1
+    evidence:
+      - "XAI implementation documentation"
+      - "Explainability method selection rationale"
+      - "Sample explanation outputs for different user roles"
+      - "Human oversight procedures using explanations"
+    remediation: "Implement appropriate XAI methods based on model type and use case: SHAP/LIME for feature importance, attention visualization for transformer models, counterfactual explanations for decision support. Ensure explanations are tailored to the audience (technical staff, end users, regulators)."
+    semgrep_rules: []
+
+  - id: MINT-003
+    area: "Bias and Fairness"
+    question: "Are bias detection and fairness metrics implemented to identify and mitigate disparate impact across protected characteristics?"
+    scan_type: code_scan
+    patterns:
+      - "bias.*detect"
+      - "fairness.*metric"
+      - "disparate.*impact"
+      - "demographic.*parity"
+      - "equalized.*odds"
+      - "protected.*class"
+      - "aif360"
+      - "fairlearn"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Bias testing methodology and results"
+      - "Fairness metric definitions and thresholds"
+      - "Disparate impact analysis reports"
+      - "Bias mitigation strategies and implementation"
+      - "Ongoing fairness monitoring dashboards"
+    remediation: "Implement systematic bias detection using fairness metrics (demographic parity, equalized odds, disparate impact ratio) across all protected characteristics. Use bias mitigation libraries (AIF360, Fairlearn) and establish fairness thresholds. Monitor fairness metrics continuously in production."
+    semgrep_rules: []

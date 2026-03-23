@@ -1,0 +1,40 @@
+{
+  "name": "ai-compliance-guardian",
+  "version": "1.0.0",
+  "description": "Autonomous AI security, privacy & compliance auditing system",
+  "type": "module",
+  "bin": {
+    "guardian": "./cli.ts"
+  },
+  "scripts": {
+    "guardian": "tsx cli.ts",
+    "scan": "tsx cli.ts scan",
+    "scan:quick": "tsx cli.ts scan --preset quick",
+    "scan:gdpr": "tsx cli.ts scan --preset gdpr",
+    "scan:soc2": "tsx cli.ts scan --preset soc2",
+    "fix": "tsx cli.ts fix",
+    "loop": "tsx cli.ts loop",
+    "score": "tsx cli.ts score",
+    "dashboard": "tsx cli.ts dashboard",
+    "report": "tsx cli.ts report"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "glob": "^11.0.0",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

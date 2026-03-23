@@ -1,0 +1,83 @@
+name: "Access Control, Identity & Privilege Management"
+domain_id: 6
+standard_refs:
+  - "ISO/IEC 27002:2022"
+  - "NIST SP 800-53"
+  - "SOC 2"
+weight: 1.8
+
+controls:
+  - id: AC-001
+    area: "Least Privilege"
+    question: "Is role-based access control (RBAC) implemented with least-privilege principles for all AI system components including model registries, data stores, and inference endpoints?"
+    scan_type: config_scan
+    patterns:
+      - "rbac"
+      - "role.*based"
+      - "least.*privilege"
+      - "iam.*policy"
+      - "permission"
+      - "access.*control"
+      - "policy.*document"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "RBAC policy documentation"
+      - "IAM role definitions and permission boundaries"
+      - "Access control matrices for AI components"
+      - "Periodic access review records"
+      - "Privilege escalation prevention mechanisms"
+    remediation: "Implement RBAC with least-privilege across all AI system components. Define granular roles for data scientists, ML engineers, model reviewers, and operators. Enforce permission boundaries in model registries, data stores, training infrastructure, and inference endpoints. Conduct quarterly access reviews."
+    semgrep_rules:
+      - "rules/overly-permissive-iam"
+      - "rules/wildcard-permissions"
+
+  - id: AC-002
+    area: "Service Account Security"
+    question: "Are service accounts used by AI systems secured with automatic credential rotation, vault-based secrets management, and monitoring?"
+    scan_type: code_scan
+    patterns:
+      - "service.*account"
+      - "secret.*manag"
+      - "vault"
+      - "credential.*rotat"
+      - "api.*key"
+      - "hardcoded.*secret"
+      - "hardcoded.*key"
+      - "password"
+      - "token"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "Secrets management platform configuration"
+      - "Credential rotation policy and automation evidence"
+      - "Service account inventory and ownership records"
+      - "Monitoring alerts for service account anomalies"
+    remediation: "Use a secrets management platform (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault) for all AI system credentials. Enforce automatic rotation on a defined schedule. Eliminate hardcoded secrets from code and configuration. Monitor service account usage for anomalous patterns."
+    semgrep_rules:
+      - "rules/hardcoded-secrets"
+      - "rules/hardcoded-api-key"
+      - "rules/hardcoded-password"
+
+  - id: AC-003
+    area: "Authentication"
+    question: "Is multi-factor authentication (MFA) enforced for all human access to AI systems, model registries, training infrastructure, and administrative interfaces?"
+    scan_type: config_scan
+    patterns:
+      - "mfa"
+      - "multi.factor"
+      - "two.factor"
+      - "2fa"
+      - "authenticat"
+      - "sso"
+      - "saml"
+      - "oidc"
+    auto_scannable: true
+    severity: P0
+    evidence:
+      - "MFA enforcement policy and configuration"
+      - "SSO/SAML/OIDC integration for AI platforms"
+      - "Authentication logs showing MFA usage"
+      - "Conditional access policies"
+    remediation: "Enforce MFA for all human access to AI system components. Integrate with enterprise SSO using SAML or OIDC. Implement conditional access policies requiring stronger authentication for sensitive operations (model deployment, data access, configuration changes)."
+    semgrep_rules: []

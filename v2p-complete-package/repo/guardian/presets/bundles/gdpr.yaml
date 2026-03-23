@@ -1,0 +1,6 @@
+name: "GDPR Compliance"
+description: "Covers data privacy, monitoring, and regulatory compliance domains aligned with GDPR requirements including data protection, breach notification, logging, and rights management."
+domains:
+  - 4
+  - 8
+  - 10

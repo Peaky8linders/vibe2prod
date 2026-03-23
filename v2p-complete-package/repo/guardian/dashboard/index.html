@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Compliance Guardian — Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #e0e0e0; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 22px; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 2px; margin-bottom: 20px; background: #151515; border-radius: 8px; padding: 3px; width: fit-content; }
+    .tab { padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #888; transition: all 0.2s; }
+    .tab.active { background: #2563eb; color: #fff; }
+    .tab:hover:not(.active) { color: #ccc; }
+    .grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+    .card { background: #151515; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px; }
+    .card h2 { font-size: 14px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .score-big { font-size: 56px; font-weight: 700; color: #fff; line-height: 1; }
+    .score-big.good { color: #4ade80; }
+    .score-big.warn { color: #facc15; }
+    .score-big.bad { color: #f87171; }
+    .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
+    .stat-row:last-child { border-bottom: none; }
+    .domain-bar { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
+    .domain-bar .bar { flex: 1; height: 6px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
+    .domain-bar .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+    .domain-bar .bar-fill.good { background: #4ade80; }
+    .domain-bar .bar-fill.warn { background: #facc15; }
+    .domain-bar .bar-fill.bad { background: #f87171; }
+    .finding { padding: 12px; border: 1px solid #2a2a2a; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.2s; }
+    .finding:hover { border-color: #444; }
+    .finding .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .finding .title { font-size: 14px; font-weight: 500; }
+    .finding .meta { font-size: 11px; color: #666; }
+    .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
+    .badge.P0 { background: #dc262633; color: #f87171; }
+    .badge.P1 { background: #ea580c33; color: #fb923c; }
+    .badge.P2 { background: #ca8a0433; color: #facc15; }
+    .badge.P3 { background: #2563eb33; color: #60a5fa; }
+    .badge.open { background: #dc262622; color: #f87171; }
+    .badge.fixed { background: #16a34a22; color: #4ade80; }
+    .badge.in_progress { background: #2563eb22; color: #60a5fa; }
+    .detail-panel { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; margin-top: 12px; display: none; }
+    .detail-panel.visible { display: block; }
+    .detail-panel h3 { font-size: 14px; margin-bottom: 8px; }
+    .detail-panel pre { background: #151515; padding: 10px; border-radius: 6px; font-size: 12px; overflow-x: auto; margin: 8px 0; font-family: 'Cascadia Code', 'Fira Code', monospace; }
+    .detail-panel .remediation { background: #16a34a11; border: 1px solid #16a34a33; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 13px; }
+    button { padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-secondary { background: #333; color: #ccc; }
+    .btn-secondary:hover { background: #444; }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field input, .field select { width: 100%; padding: 7px 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 13px; }
+    .field input:focus { border-color: #2563eb; outline: none; }
+    .actions-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+    .filter-bar select, .filter-bar input { padding: 6px 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 12px; }
+    .empty { text-align: center; padding: 40px; color: #555; }
+    #settingsPanel, #findingsPanel { display: none; }
+    #findingsPanel.active, #settingsPanel.active, #overviewPanel.active { display: block; }
+    .std-refs { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .std-ref { font-size: 10px; padding: 1px 6px; background: #1a1a1a; border-radius: 4px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛡️ AI Compliance Guardian</h1>
+    <p class="subtitle">Autonomous security, privacy & compliance auditing — powered by Karpathy autoresearch + gstack methodology</p>
+
+    <div class="tabs">
+      <div class="tab active" onclick="showPanel('overview')">Overview</div>
+      <div class="tab" onclick="showPanel('findings')">Findings</div>
+      <div class="tab" onclick="showPanel('settings')">Settings</div>
+    </div>
+
+    <!-- Overview Panel -->
+    <div id="overviewPanel" class="active">
+      <div class="grid">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <h2>Compliance Score</h2>
+            <div class="score-big" id="mainScore">--</div>
+            <div style="margin-top:8px">
+              <div class="stat-row"><span>Open Findings</span><span id="openCount">0</span></div>
+              <div class="stat-row"><span>🔴 Critical (P0)</span><span id="p0Count">0</span></div>
+              <div class="stat-row"><span>🟠 High (P1)</span><span id="p1Count">0</span></div>
+              <div class="stat-row"><span>🟡 Medium (P2)</span><span id="p2Count">0</span></div>
+              <div class="stat-row"><span>🔵 Low (P3)</span><span id="p3Count">0</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Quick Actions</h2>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <button class="btn-primary" onclick="runScan()" style="width:100%">🔍 Run Full Scan</button>
+              <button class="btn-success" onclick="showPanel('findings')" style="width:100%">📋 View Findings</button>
+              <button class="btn-secondary" onclick="showPanel('settings')" style="width:100%">⚙️ Settings</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h2>Domain Compliance</h2>
+            <div id="domainBars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Findings Panel -->
+    <div id="findingsPanel">
+      <div class="actions-bar">
+        <button class="btn-primary" onclick="runScan()">🔍 Scan Now</button>
+        <button class="btn-success" onclick="fixAll()">🔧 Auto-Fix All</button>
+      </div>
+      <div class="filter-bar">
+        <select id="filterSeverity" onchange="renderFindings()">
+          <option value="">All Severities</option>
+          <option value="P0">P0 Critical</option>
+          <option value="P1">P1 High</option>
+          <option value="P2">P2 Medium</option>
+          <option value="P3">P3 Low</option>
+        </select>
+        <select id="filterDomain" onchange="renderFindings()">
+          <option value="">All Domains</option>
+          <option value="1">D01: Governance</option>
+          <option value="2">D02: Risk Management</option>
+          <option value="3">D03: Lifecycle Security</option>
+          <option value="4">D04: Data Security</option>
+          <option value="5">D05: Model Integrity</option>
+          <option value="6">D06: Access Control</option>
+          <option value="7">D07: Infrastructure</option>
+          <option value="8">D08: Monitoring</option>
+          <option value="9">D09: Supply Chain</option>
+          <option value="10">D10: Compliance</option>
+        </select>
+        <select id="filterStatus" onchange="renderFindings()">
+          <option value="">All Status</option>
+          <option value="open">Open</option>
+          <option value="fixed">Fixed</option>
+          <option value="in_progress">In Progress</option>
+        </select>
+        <input type="text" id="filterSearch" placeholder="Search findings..." oninput="renderFindings()" style="flex:1">
+      </div>
+      <div id="findingsList"></div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settingsPanel">
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <h2>API Keys</h2>
+          <div class="field">
+            <label>Claude API Key</label>
+            <input type="password" id="claudeKey" placeholder="sk-ant-api03-...">
+          </div>
+          <div class="field">
+            <label>Codex API Key</label>
+            <input type="password" id="codexKey" placeholder="sk-...">
+          </div>
+          <div class="field">
+            <label>Model</label>
+            <select id="model">
+              <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (fast, recommended)</option>
+              <option value="claude-opus-4-6">Claude Opus 4.6 (thorough)</option>
+              <option value="claude-haiku-4-5">Claude Haiku 4.5 (cheapest)</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="saveConfig()">Save Keys</button>
+        </div>
+        <div class="card">
+          <h2>Autofix Settings</h2>
+          <div class="field">
+            <label>Auto-Fix</label>
+            <select id="autoFix">
+              <option value="true">Enabled — fix findings automatically</option>
+              <option value="false">Disabled — scan only, manual fixes</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Confidence Threshold (%)</label>
+            <input type="number" id="confidence" value="85" min="50" max="100">
+          </div>
+          <div class="field">
+            <label>Max Fix Iterations</label>
+            <input type="number" id="maxIter" value="10" min="1" max="50">
+          </div>
+          <div class="field">
+            <label>Time Budget per Fix (seconds)</label>
+            <input type="number" id="timeBudget" value="300" min="30" max="1800">
+          </div>
+          <button class="btn-primary" onclick="saveConfig()">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    let findings = [];
+    const DOMAIN_NAMES = {
+      1:'Governance',2:'Risk Mgmt',3:'Lifecycle',4:'Data Security',5:'Model Integrity',
+      6:'Access Control',7:'Infrastructure',8:'Monitoring',9:'Supply Chain',10:'Compliance'
+    };
+
+    function showPanel(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('overviewPanel').classList.remove('active');
+      document.getElementById('findingsPanel').classList.remove('active');
+      document.getElementById('settingsPanel').classList.remove('active');
+      document.getElementById(name + 'Panel').classList.add('active');
+      document.querySelectorAll('.tab')[{overview:0,findings:1,settings:2}[name]].classList.add('active');
+    }
+
+    async function loadData() {
+      try {
+        const [fRes, sRes, cRes] = await Promise.all([
+          fetch(`${API}/api/findings`), fetch(`${API}/api/score`), fetch(`${API}/api/config`)
+        ]);
+        findings = await fRes.json();
+        const score = await sRes.json();
+        const config = await cRes.json();
+        renderOverview(score);
+        renderFindings();
+        renderConfig(config);
+      } catch { console.log('API not ready'); }
+    }
+
+    function renderOverview(score) {
+      const el = document.getElementById('mainScore');
+      const s = score.composite || 0;
+      el.textContent = s + '%';
+      el.className = 'score-big ' + (s >= 90 ? 'good' : s >= 70 ? 'warn' : 'bad');
+
+      const open = findings.filter(f => f.status === 'open');
+      document.getElementById('openCount').textContent = open.length;
+      document.getElementById('p0Count').textContent = open.filter(f => f.severity === 'P0').length;
+      document.getElementById('p1Count').textContent = open.filter(f => f.severity === 'P1').length;
+      document.getElementById('p2Count').textContent = open.filter(f => f.severity === 'P2').length;
+      document.getElementById('p3Count').textContent = open.filter(f => f.severity === 'P3').length;
+
+      const bars = document.getElementById('domainBars');
+      bars.innerHTML = '';
+      for (let d = 1; d <= 10; d++) {
+        const ds = score.domains?.[d] ?? 100;
+        const cls = ds >= 90 ? 'good' : ds >= 70 ? 'warn' : 'bad';
+        bars.innerHTML += `<div class="domain-bar">
+          <span style="width:100px;color:#888">D${String(d).padStart(2,'0')} ${DOMAIN_NAMES[d]}</span>
+          <div class="bar"><div class="bar-fill ${cls}" style="width:${ds}%"></div></div>
+          <span style="width:35px;text-align:right">${ds}%</span>
+        </div>`;
+      }
+    }
+
+    function renderFindings() {
+      const sev = document.getElementById('filterSeverity').value;
+      const dom = document.getElementById('filterDomain').value;
+      const stat = document.getElementById('filterStatus').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+
+      let filtered = findings;
+      if (sev) filtered = filtered.filter(f => f.severity === sev);
+      if (dom) filtered = filtered.filter(f => f.domain == dom);
+      if (stat) filtered = filtered.filter(f => f.status === stat);
+      if (search) filtered = filtered.filter(f =>
+        (f.title||'').toLowerCase().includes(search) ||
+        (f.file||'').toLowerCase().includes(search) ||
+        (f.id||'').toLowerCase().includes(search)
+      );
+
+      const el = document.getElementById('findingsList');
+      if (filtered.length === 0) {
+        el.innerHTML = '<div class="empty">No findings match your filters. Run a scan to discover issues.</div>';
+        return;
+      }
+
+      el.innerHTML = filtered.map(f => `
+        <div class="finding" onclick="toggleDetail('${f.id}')">
+          <div class="header">
+            <span class="title">${f.title || f.id}</span>
+            <div style="display:flex;gap:4px">
+              <span class="badge ${f.severity}">${f.severity}</span>
+              <span class="badge ${f.status}">${f.status}</span>
+            </div>
+          </div>
+          <div class="meta">${f.id} · D${String(f.domain).padStart(2,'0')} ${DOMAIN_NAMES[f.domain]||''} · ${f.file||''}:${f.line||''} · ${f.category||''}</div>
+          <div class="std-refs">${(f.standard_refs||[]).map(r => `<span class="std-ref">${r}</span>`).join('')}</div>
+          <div class="detail-panel" id="detail-${f.id}">
+            <h3>Description</h3>
+            <p style="font-size:13px;color:#bbb">${f.description||''}</p>
+            <h3 style="margin-top:10px">Evidence</h3>
+            <pre>${escapeHtml(f.evidence||'')}</pre>
+            <div class="remediation">
+              <strong>Remediation:</strong> ${f.remediation||'No remediation specified'}
+            </div>
+            <div style="margin-top:10px;display:flex;gap:6px">
+              ${f.auto_fixable ? `<button class="btn-success" onclick="fixFinding('${f.id}')">🔧 Auto-Fix</button>` : ''}
+              <button class="btn-secondary" onclick="markFalsePositive('${f.id}')">❌ False Positive</button>
+              <button class="btn-secondary" onclick="markFixed('${f.id}')">✅ Mark Fixed</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function toggleDetail(id) {
+      const el = document.getElementById('detail-' + id);
+      if (el) el.classList.toggle('visible');
+    }
+
+    function renderConfig(config) {
+      if (config.claude_api_key) document.getElementById('claudeKey').value = config.claude_api_key;
+      if (config.codex_api_key) document.getElementById('codexKey').value = config.codex_api_key;
+      if (config.model) document.getElementById('model').value = config.model;
+      if (config.auto_fix) document.getElementById('autoFix').value = config.auto_fix;
+      if (config.confidence_threshold) document.getElementById('confidence').value = config.confidence_threshold;
+      if (config.max_iterations) document.getElementById('maxIter').value = config.max_iterations;
+      if (config.time_budget_seconds) document.getElementById('timeBudget').value = config.time_budget_seconds;
+    }
+
+    async function saveConfig() {
+      const config = {
+        claude_api_key: document.getElementById('claudeKey').value,
+        codex_api_key: document.getElementById('codexKey').value,
+        model: document.getElementById('model').value,
+        auto_fix: document.getElementById('autoFix').value,
+        confidence_threshold: document.getElementById('confidence').value,
+        max_iterations: document.getElementById('maxIter').value,
+        time_budget_seconds: document.getElementById('timeBudget').value,
+      };
+      await fetch(`${API}/api/config`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(config) });
+      alert('Settings saved!');
+    }
+
+    async function runScan() {
+      const btn = event.target;
+      btn.textContent = '🔄 Scanning...';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/api/scan`, { method: 'POST' });
+        const data = await res.json();
+        alert(`Scan complete: ${data.count} findings`);
+        await loadData();
+      } catch (e) { alert('Scan failed: ' + e.message); }
+      btn.textContent = '🔍 Run Full Scan';
+      btn.disabled = false;
+    }
+
+    async function fixFinding(id) {
+      const res = await fetch(`${API}/api/fix/${id}`, { method: 'POST' });
+      const data = await res.json();
+      alert(data.message || data.error);
+      await loadData();
+    }
+
+    function fixAll() { alert('Auto-fix all requires Claude API key. Configure in Settings tab.'); }
+    function markFalsePositive(id) { updateFindingStatus(id, 'false_positive'); }
+    function markFixed(id) { updateFindingStatus(id, 'fixed'); }
+
+    async function updateFindingStatus(id, status) {
+      // Client-side update for now
+      const f = findings.find(f => f.id === id);
+      if (f) f.status = status;
+      renderFindings();
+    }
+
+    loadData();
+    setInterval(loadData, 15000);
+  </script>
+</body>
+</html>
