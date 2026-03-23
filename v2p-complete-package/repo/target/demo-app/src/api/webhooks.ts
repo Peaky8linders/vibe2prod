@@ -1,22 +1,29 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import crypto from 'crypto';
 import { db } from '../config/database';
 import { requireAuth } from '../middleware/auth';
+import { webhookPayloadSchema, syncSchema } from '../schemas/validation';
 
 const router = Router();
 
-// Verify webhook signature from payment provider
-function verifyWebhookSignature(payload: string, signature: string | undefined): boolean {
+// Verify webhook signature from payment provider using raw body bytes
+function verifyWebhookSignature(rawBody: Buffer | undefined, signature: string | undefined): boolean {
   const secret = process.env.WEBHOOK_SECRET;
-  if (!secret || !signature) return false;
+  if (!secret || !signature || !rawBody) return false;
 
-  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  const sigBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expected);
+
+  // Guard against different-length buffers (timingSafeEqual throws on mismatch)
+  if (sigBuf.length !== expectedBuf.length) return false;
+
+  return crypto.timingSafeEqual(sigBuf, expectedBuf);
 }
 
 // Receive webhook from payment provider
 router.post('/payment', async (req, res) => {
-  const rawBody = JSON.stringify(req.body);
+  const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
   const signature = req.headers['x-webhook-signature'] as string | undefined;
 
   if (!verifyWebhookSignature(rawBody, signature)) {
@@ -24,12 +31,12 @@ router.post('/payment', async (req, res) => {
     return;
   }
 
-  const { event, data } = req.body;
-
-  if (!event || !data?.user_id) {
+  const parsed = webhookPayloadSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ error: 'Invalid webhook payload' });
     return;
   }
+  const { event, data } = parsed.data;
 
   try {
     if (event === 'payment.completed') {
@@ -68,11 +75,12 @@ router.post('/sync/:provider', requireAuth, async (req, res) => {
     return;
   }
 
-  const { task_ids } = req.body;
-  if (!Array.isArray(task_ids) || task_ids.length === 0) {
-    res.status(400).json({ error: 'task_ids must be a non-empty array' });
+  const parsed2 = syncSchema.safeParse(req.body);
+  if (!parsed2.success) {
+    res.status(400).json({ error: parsed2.error.issues[0].message });
     return;
   }
+  const { task_ids } = parsed2.data;
 
   try {
     const placeholders = task_ids.map((_: string, i: number) => `$${i + 2}`).join(',');
@@ -123,7 +131,7 @@ router.post('/sync/:provider', requireAuth, async (req, res) => {
   }
 });
 
-// Export tasks as CSV (requires auth, streams data, ownership check)
+// Export tasks as CSV (requires auth, batched cursor for memory efficiency, ownership check)
 router.get('/export/:userId', requireAuth, async (req, res) => {
   // Users can only export their own tasks
   if (req.user!.userId !== req.params.userId && req.user!.role !== 'admin') {
@@ -131,30 +139,42 @@ router.get('/export/:userId', requireAuth, async (req, res) => {
     return;
   }
 
+  const client = await db.pool.connect();
   try {
-    const tasks = await db.query(
-      'SELECT id, title, description, status, priority, due_date FROM tasks WHERE user_id = $1',
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="tasks.csv"');
+    res.write('id,title,description,status,priority,due_date\n');
+
+    const escapeCsv = (val: string | null) => {
+      if (val == null) return '';
+      return `"${String(val).replace(/"/g, '""')}"`;
+    };
+
+    // Use server-side cursor to avoid loading all rows into memory at once
+    await client.query('BEGIN');
+    await client.query(
+      "DECLARE task_cursor CURSOR FOR SELECT id, title, description, status, priority, due_date FROM tasks WHERE user_id = $1",
       [req.params.userId]
     );
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="tasks.csv"');
-
-    // Write header
-    res.write('id,title,description,status,priority,due_date\n');
-
-    // Stream rows to avoid loading everything in memory for large datasets
-    for (const task of tasks.rows) {
-      const escapeCsv = (val: string | null) => {
-        if (val == null) return '';
-        return `"${String(val).replace(/"/g, '""')}"`;
-      };
-      res.write(`${task.id},${escapeCsv(task.title)},${escapeCsv(task.description)},${task.status},${task.priority},${task.due_date}\n`);
+    const BATCH_SIZE = 100;
+    let hasMore = true;
+    while (hasMore) {
+      const batch = await client.query(`FETCH ${BATCH_SIZE} FROM task_cursor`);
+      for (const task of batch.rows) {
+        res.write(`${task.id},${escapeCsv(task.title)},${escapeCsv(task.description)},${task.status},${task.priority},${task.due_date}\n`);
+      }
+      hasMore = batch.rows.length === BATCH_SIZE;
     }
 
+    await client.query('CLOSE task_cursor');
+    await client.query('COMMIT');
     res.end();
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     res.status(500).json({ error: 'Export failed' });
+  } finally {
+    client.release();
   }
 });
 

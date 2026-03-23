@@ -19,7 +19,13 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '1mb' }));
+// Preserve raw body for webhook signature verification
+app.use(express.json({
+  limit: '1mb',
+  verify: (req: Request, _res, buf) => {
+    (req as Request & { rawBody?: Buffer }).rawBody = buf;
+  },
+}));
 
 // Security headers
 app.use((_req, res, next) => {
