@@ -42,6 +42,12 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+// Serve static test UI in dev mode
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use('/test-ui', express.static(path.join(__dirname, '..', 'public')));
+
 app.use('/api/tasks', taskRouter);
 app.use('/api/users', userRouter);
 app.use('/api/webhooks', webhookRouter);
