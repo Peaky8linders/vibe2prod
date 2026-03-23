@@ -40,7 +40,9 @@ function writeConfig(config: Record<string, string>): void {
 function readFindings(): Array<Record<string, unknown>> {
   const file = path.join(FINDINGS_DIR, 'findings.jsonl');
   if (!fs.existsSync(file)) return [];
-  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => {
+    try { return JSON.parse(l); } catch { return null; }
+  }).filter(Boolean);
 }
 
 function readScore(): Record<string, unknown> {
@@ -49,10 +51,35 @@ function readScore(): Record<string, unknown> {
   return JSON.parse(fs.readFileSync(file, 'utf-8'));
 }
 
+// SSRF protection: block internal/private IP ranges
+function isPrivateUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    const hostname = parsed.hostname;
+    // Block obvious private/internal ranges
+    if (/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.0\.0\.0|localhost|::1|\[::1\])/.test(hostname)) return true;
+    // Block cloud metadata endpoints
+    if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') return true;
+    return false;
+  } catch {
+    return true; // If we can't parse it, block it
+  }
+}
+
+// Allowed config keys — reject all others
+const ALLOWED_CONFIG_KEYS = new Set(['claude_api_key', 'codex_api_key', 'target_dir', 'default_preset', 'auto_fix']);
+
 export async function startDashboard(port = 3002): Promise<void> {
   const app = express();
-  app.use(cors());
-  app.use(express.json());
+
+  // Bind to localhost only — not exposed to network by default
+  const BIND_HOST = process.env.GUARDIAN_BIND_HOST || '127.0.0.1';
+
+  // Restrict CORS to localhost origins only
+  app.use(cors({
+    origin: [`http://localhost:${port}`, `http://127.0.0.1:${port}`],
+  }));
+  app.use(express.json({ limit: '100kb' }));
 
   // Serve dashboard UI
   app.use('/', express.static(path.join(__dirname)));
@@ -68,26 +95,38 @@ export async function startDashboard(port = 3002): Promise<void> {
     res.json(readScore());
   });
 
-  // API: Get config (mask API keys)
+  // API: Get config (mask API keys — only show last 4 chars)
   app.get('/api/config', (_req, res) => {
     const config = readConfig();
     const masked = { ...config };
-    if (masked.claude_api_key) masked.claude_api_key = masked.claude_api_key.substring(0, 10) + '...';
-    if (masked.codex_api_key) masked.codex_api_key = masked.codex_api_key.substring(0, 10) + '...';
+    for (const key of ['claude_api_key', 'codex_api_key']) {
+      if (masked[key]) {
+        masked[key] = '****' + masked[key].slice(-4);
+      }
+    }
     res.json(masked);
   });
 
-  // API: Update config
+  // API: Update config (only allowed keys)
   app.post('/api/config', (req, res) => {
     const config = readConfig();
     const updates = req.body;
+    const rejected: string[] = [];
     for (const [key, val] of Object.entries(updates)) {
+      if (!ALLOWED_CONFIG_KEYS.has(key)) {
+        rejected.push(key);
+        continue;
+      }
       if (typeof val === 'string' && val.trim()) {
         config[key] = val.trim();
       }
     }
     writeConfig(config);
-    res.json({ saved: true });
+    if (rejected.length > 0) {
+      res.json({ saved: true, rejected, message: `Keys not allowed: ${rejected.join(', ')}` });
+    } else {
+      res.json({ saved: true });
+    }
   });
 
   // API: Run scan
@@ -106,7 +145,8 @@ export async function startDashboard(port = 3002): Promise<void> {
 
       res.json({ count: findings.length, findings });
     } catch (err) {
-      res.status(500).json({ error: 'Scan failed', details: err instanceof Error ? err.message : 'unknown' });
+      console.error('Scan failed:', err);
+      res.status(500).json({ error: 'Scan failed' });
     }
   });
 
@@ -158,14 +198,19 @@ export async function startDashboard(port = 3002): Promise<void> {
 
       res.json({ count: findingsArr.length, findings: findingsArr, score: result.score });
     } catch (err) {
-      res.status(500).json({ error: 'GitHub scan failed', details: err instanceof Error ? err.message : 'unknown' });
+      console.error('GitHub scan failed:', err);
+      res.status(500).json({ error: 'GitHub scan failed' });
     }
   });
 
-  // API: DAST scan (live URL)
+  // API: DAST scan (live URL) — with SSRF protection
   app.post('/api/scan/url', async (req, res) => {
     const { url } = req.body;
     if (!url) { res.status(400).json({ error: 'URL is required' }); return; }
+    if (isPrivateUrl(url)) {
+      res.status(400).json({ error: 'Cannot scan internal/private URLs' });
+      return;
+    }
     try {
       const { scan: dastScan } = await import('../scanners/dast-scanner.js');
       const dastFindings = await dastScan(url);
@@ -175,8 +220,8 @@ export async function startDashboard(port = 3002): Promise<void> {
       fs.appendFileSync(findingsFile, entries.join('\n') + '\n');
 
       res.json({ count: dastFindings.length, findings: dastFindings });
-    } catch (err) {
-      res.status(500).json({ error: 'URL scan failed', details: err instanceof Error ? err.message : 'unknown' });
+    } catch {
+      res.status(500).json({ error: 'URL scan failed' });
     }
   });
 
@@ -188,7 +233,8 @@ export async function startDashboard(port = 3002): Promise<void> {
       res.setHeader('Content-Type', 'text/html');
       res.send(html);
     } catch (err) {
-      res.status(500).json({ error: 'Report generation failed', details: err instanceof Error ? err.message : 'unknown' });
+      console.error('Report generation failed:', err);
+      res.status(500).json({ error: 'Report generation failed' });
     }
   });
 
@@ -196,8 +242,12 @@ export async function startDashboard(port = 3002): Promise<void> {
   app.get('/api/report/json', async (_req, res) => {
     try {
       const { generateJsonReport } = await import('../report/pdf-generator.js');
-      res.json(generateJsonReport());
+      const report = generateJsonReport();
+      // generateJsonReport returns a JSON string — send it directly as JSON content
+      res.setHeader('Content-Type', 'application/json');
+      res.send(report);
     } catch (err) {
+      console.error('Report generation failed:', err);
       res.status(500).json({ error: 'Report generation failed' });
     }
   });
@@ -215,14 +265,24 @@ export async function startDashboard(port = 3002): Promise<void> {
     res.json(entries);
   });
 
-  app.listen(port, () => {
+  const server = app.listen(port, BIND_HOST, () => {
     console.log(`\n🛡️  Guardian Dashboard`);
-    console.log(`   http://localhost:${port}`);
+    console.log(`   http://${BIND_HOST}:${port}`);
     console.log(`   Findings: ${readFindings().length}`);
-    console.log(`   Score: ${readScore().composite || '--'}%\n`);
+    console.log(`   Score: ${(readScore() as { composite?: number }).composite || '--'}%\n`);
   });
+
+  // Graceful shutdown
+  const shutdown = () => {
+    console.log('\n🛡️  Shutting down Guardian Dashboard...');
+    server.close(() => process.exit(0));
+    // Force exit after 5s if connections don't drain
+    setTimeout(() => process.exit(1), 5_000);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
-if (process.argv[1]?.includes('api')) {
+if (process.argv[1]?.endsWith('api.ts') || process.argv[1]?.endsWith('api.js')) {
   startDashboard().catch(console.error);
 }

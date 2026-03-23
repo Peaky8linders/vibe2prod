@@ -18,7 +18,6 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FINDINGS_DIR = path.join(__dirname, 'findings');
-const PRESETS_DIR = path.join(__dirname, 'presets');
 
 // Ensure directories exist
 fs.mkdirSync(FINDINGS_DIR, { recursive: true });
@@ -62,7 +61,9 @@ interface Finding {
 function readFindings(): Finding[] {
   const file = path.join(FINDINGS_DIR, 'findings.jsonl');
   if (!fs.existsSync(file)) return [];
-  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+  return fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean).map(l => {
+    try { return JSON.parse(l); } catch { return null; }
+  }).filter((f): f is Finding => f !== null);
 }
 
 function computeScore(findings: Finding[]): { composite: number; domains: Record<number, number> } {
@@ -96,15 +97,40 @@ function computeScore(findings: Finding[]): { composite: number; domains: Record
 
 async function cmdScan(args: string[]) {
   const targetIdx = args.indexOf('--target');
-  const targetDir = targetIdx >= 0 ? args[targetIdx + 1] : path.join(__dirname, '..', 'target', 'demo-app');
+  const githubIdx = args.indexOf('--github');
+  const urlIdx = args.indexOf('--url');
   const isJson = args.includes('--json');
 
-  console.log(isJson ? '' : `\n🛡️  Guardian Scan\n   Target: ${targetDir}\n`);
+  let findings: Finding[];
 
-  // Dynamic import scanners
-  const { runAllScanners } = await import('./scanners/index.js');
-  const result = await runAllScanners(targetDir);
-  const findings = result.findings;
+  // GitHub repo scan
+  if (githubIdx >= 0 && args[githubIdx + 1]) {
+    const githubUrl = args[githubIdx + 1];
+    if (!isJson) {
+      console.log(`\n🛡️  Guardian Scan (GitHub)\n   Repo: ${githubUrl}\n`);
+      console.log('   Cloning repository...');
+    }
+    const { scanGitHubRepo } = await import('./scanners/github-scanner.js');
+    const result = await scanGitHubRepo(githubUrl);
+    findings = result.findings;
+    // Save score
+    fs.writeFileSync(path.join(FINDINGS_DIR, 'compliance-score.json'), JSON.stringify(result.score));
+  }
+  // DAST URL scan
+  else if (urlIdx >= 0 && args[urlIdx + 1]) {
+    const targetUrl = args[urlIdx + 1];
+    if (!isJson) console.log(`\n🛡️  Guardian Scan (DAST)\n   URL: ${targetUrl}\n`);
+    const { scan: dastScan } = await import('./scanners/dast-scanner.js');
+    findings = await dastScan(targetUrl);
+  }
+  // Local directory scan (default)
+  else {
+    const targetDir = targetIdx >= 0 ? args[targetIdx + 1] : path.join(__dirname, '..', 'target', 'demo-app');
+    if (!isJson) console.log(`\n🛡️  Guardian Scan\n   Target: ${targetDir}\n`);
+    const { runAllScanners } = await import('./scanners/index.js');
+    const result = await runAllScanners(targetDir);
+    findings = result.findings;
+  }
 
   // Save findings
   const findingsFile = path.join(FINDINGS_DIR, 'findings.jsonl');
@@ -123,7 +149,8 @@ async function cmdScan(args: string[]) {
   if (isJson) {
     console.log(JSON.stringify(findings));
   } else {
-    console.log(`   Scanned: ${targetDir}`);
+    const scanLabel = githubIdx >= 0 ? args[githubIdx + 1] : urlIdx >= 0 ? args[urlIdx + 1] : (targetIdx >= 0 ? args[targetIdx + 1] : 'demo-app');
+    console.log(`   Scanned: ${scanLabel}`);
     console.log(`   Total findings: ${findings.length}`);
     console.log(`   New findings: ${newCount}`);
     console.log(`   By severity:`);

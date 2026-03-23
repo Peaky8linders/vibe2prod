@@ -2,14 +2,8 @@ import type { Finding } from './secret-scanner';
 
 const FETCH_TIMEOUT = 5_000;
 
-let findingCounter = 0;
-
-function nextId(): string {
-  findingCounter++;
-  return `DAST-${String(findingCounter).padStart(3, '0')}`;
-}
-
 function createFinding(
+  counter: { value: number },
   severity: Finding['severity'],
   category: string,
   controlId: string,
@@ -20,8 +14,9 @@ function createFinding(
   standardRefs: string[],
   targetUrl: string,
 ): Finding {
+  counter.value++;
   return {
-    id: nextId(),
+    id: `DAST-${String(counter.value).padStart(3, '0')}`,
     domain: 7,
     control_id: controlId,
     severity,
@@ -40,38 +35,21 @@ function createFinding(
 async function safeFetch(
   url: string,
   options?: RequestInit,
+  followRedirects = false,
 ): Promise<Response | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
-      redirect: 'manual',
+      redirect: followRedirects ? 'follow' : 'manual',
     });
-    clearTimeout(timeout);
     return response;
   } catch {
     return null;
-  }
-}
-
-async function safeFetchFollow(
-  url: string,
-  options?: RequestInit,
-): Promise<Response | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      redirect: 'follow',
-    });
+  } finally {
     clearTimeout(timeout);
-    return response;
-  } catch {
-    return null;
   }
 }
 
@@ -146,6 +124,7 @@ const SECURITY_HEADERS: HeaderCheck[] = [
 ];
 
 async function checkSecurityHeaders(
+  counter: { value: number },
   targetUrl: string,
   response: Response,
 ): Promise<Finding[]> {
@@ -156,6 +135,7 @@ async function checkSecurityHeaders(
     if (!value) {
       findings.push(
         createFinding(
+          counter,
           check.severity,
           'missing-security-header',
           check.controlId,
@@ -178,6 +158,7 @@ async function checkSecurityHeaders(
 // ---------------------------------------------------------------------------
 
 async function checkInformationLeakage(
+  counter: { value: number },
   targetUrl: string,
   response: Response,
 ): Promise<Finding[]> {
@@ -188,6 +169,7 @@ async function checkInformationLeakage(
   if (server) {
     findings.push(
       createFinding(
+        counter,
         'P2',
         'information-leakage',
         'DAST-INFO-001',
@@ -206,6 +188,7 @@ async function checkInformationLeakage(
   if (poweredBy) {
     findings.push(
       createFinding(
+        counter,
         'P2',
         'information-leakage',
         'DAST-INFO-002',
@@ -221,7 +204,7 @@ async function checkInformationLeakage(
 
   // Check for detailed error pages on a non-existent path
   const errorUrl = targetUrl.replace(/\/$/, '') + '/nonexistent-path-' + Date.now();
-  const errorResponse = await safeFetchFollow(errorUrl);
+  const errorResponse = await safeFetch(errorUrl, undefined, true);
   if (errorResponse) {
     try {
       const body = await errorResponse.text();
@@ -239,6 +222,7 @@ async function checkInformationLeakage(
         if (pattern.test(body)) {
           findings.push(
             createFinding(
+              counter,
               'P1',
               'information-leakage',
               'DAST-INFO-003',
@@ -265,12 +249,12 @@ async function checkInformationLeakage(
 // Check: CORS Misconfiguration
 // ---------------------------------------------------------------------------
 
-async function checkCors(targetUrl: string): Promise<Finding[]> {
+async function checkCors(counter: { value: number }, targetUrl: string): Promise<Finding[]> {
   const findings: Finding[] = [];
 
-  const corsResponse = await safeFetchFollow(targetUrl, {
+  const corsResponse = await safeFetch(targetUrl, {
     headers: { Origin: 'https://evil.com' },
-  });
+  }, true);
 
   if (corsResponse) {
     const acao = corsResponse.headers.get('access-control-allow-origin');
@@ -280,6 +264,7 @@ async function checkCors(targetUrl: string): Promise<Finding[]> {
       if (acac?.toLowerCase() === 'true') {
         findings.push(
           createFinding(
+            counter,
             'P0',
             'cors-misconfiguration',
             'DAST-CORS-001',
@@ -294,6 +279,7 @@ async function checkCors(targetUrl: string): Promise<Finding[]> {
       } else {
         findings.push(
           createFinding(
+            counter,
             'P1',
             'cors-misconfiguration',
             'DAST-CORS-002',
@@ -309,6 +295,7 @@ async function checkCors(targetUrl: string): Promise<Finding[]> {
     } else if (acao === 'https://evil.com') {
       findings.push(
         createFinding(
+          counter,
           'P0',
           'cors-misconfiguration',
           'DAST-CORS-003',
@@ -331,6 +318,7 @@ async function checkCors(targetUrl: string): Promise<Finding[]> {
 // ---------------------------------------------------------------------------
 
 async function checkCookies(
+  counter: { value: number },
   targetUrl: string,
   response: Response,
 ): Promise<Finding[]> {
@@ -356,6 +344,7 @@ async function checkCookies(
     if (missingFlags.length > 0) {
       findings.push(
         createFinding(
+          counter,
           missingFlags.includes('HttpOnly') || missingFlags.includes('Secure') ? 'P1' : 'P2',
           'cookie-security',
           'DAST-COOKIE-001',
@@ -381,7 +370,7 @@ async function checkCookies(
 // Check: SSL/TLS
 // ---------------------------------------------------------------------------
 
-async function checkSslTls(targetUrl: string): Promise<Finding[]> {
+async function checkSslTls(counter: { value: number }, targetUrl: string): Promise<Finding[]> {
   const findings: Finding[] = [];
 
   // Check if HTTP redirects to HTTPS
@@ -398,6 +387,7 @@ async function checkSslTls(targetUrl: string): Promise<Finding[]> {
         if (!isRedirectToHttps) {
           findings.push(
             createFinding(
+              counter,
               'P1',
               'ssl-tls',
               'DAST-TLS-001',
@@ -423,7 +413,7 @@ async function checkSslTls(targetUrl: string): Promise<Finding[]> {
 // Check: Open Redirect
 // ---------------------------------------------------------------------------
 
-async function checkOpenRedirect(targetUrl: string): Promise<Finding[]> {
+async function checkOpenRedirect(counter: { value: number }, targetUrl: string): Promise<Finding[]> {
   const findings: Finding[] = [];
   const baseUrl = targetUrl.replace(/\/$/, '');
   const evilTarget = 'https://evil.com/pwned';
@@ -440,6 +430,7 @@ async function checkOpenRedirect(targetUrl: string): Promise<Finding[]> {
       if (status >= 300 && status < 400 && location.includes('evil.com')) {
         findings.push(
           createFinding(
+            counter,
             'P1',
             'open-redirect',
             'DAST-REDIR-001',
@@ -469,7 +460,8 @@ async function checkOpenRedirect(targetUrl: string): Promise<Finding[]> {
  * Checks security headers, information leakage, CORS, cookies, SSL/TLS, and open redirects.
  */
 export async function scan(targetUrl: string): Promise<Finding[]> {
-  findingCounter = 0;
+  // Local counter — safe for concurrent calls (no module-level mutation)
+  const counter = { value: 0 };
 
   // Normalize URL
   let url = targetUrl.trim();
@@ -477,11 +469,12 @@ export async function scan(targetUrl: string): Promise<Finding[]> {
     url = 'https://' + url;
   }
 
-  // Initial request to the target
-  const response = await safeFetchFollow(url);
+  // Initial request to the target (follow redirects)
+  const response = await safeFetch(url, undefined, true);
   if (!response) {
     return [
       createFinding(
+        counter,
         'P1',
         'connectivity',
         'DAST-CONN-001',
@@ -504,12 +497,12 @@ export async function scan(targetUrl: string): Promise<Finding[]> {
     sslFindings,
     redirectFindings,
   ] = await Promise.all([
-    checkSecurityHeaders(url, response),
-    checkInformationLeakage(url, response),
-    checkCors(url),
-    checkCookies(url, response),
-    checkSslTls(url),
-    checkOpenRedirect(url),
+    checkSecurityHeaders(counter, url, response),
+    checkInformationLeakage(counter, url, response),
+    checkCors(counter, url),
+    checkCookies(counter, url, response),
+    checkSslTls(counter, url),
+    checkOpenRedirect(counter, url),
   ]);
 
   return [
