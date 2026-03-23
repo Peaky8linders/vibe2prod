@@ -1,55 +1,27 @@
 import { Router } from 'express';
 import { db } from '../config/database';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { JWT_SECRET, requireAuth, requireRole } from '../middleware/auth';
+import { hashPassword, verifyPassword } from '../utils/crypto';
+import { registerSchema, loginSchema } from '../schemas/validation';
 
 const router = Router();
 
-// Hash password with scrypt (secure alternative to MD5, no extra dependency needed)
-async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
-  const salt = crypto.randomBytes(32).toString('hex');
-  return new Promise((resolve, reject) => {
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-      if (err) reject(err);
-      else resolve({ hash: derivedKey.toString('hex'), salt });
-    });
-  });
-}
-
-async function verifyPassword(password: string, storedHash: string, salt: string): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-      if (err) reject(err);
-      else resolve(derivedKey.toString('hex') === storedHash);
-    });
-  });
-}
-
 // Register
 router.post('/register', async (req, res) => {
-  const { email, password, name } = req.body;
-
-  // Input validation
-  if (!email || typeof email !== 'string' || !email.includes('@')) {
-    res.status(400).json({ error: 'Valid email is required' });
+  const parsed = registerSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-  if (!password || typeof password !== 'string' || password.length < 8) {
-    res.status(400).json({ error: 'Password must be at least 8 characters' });
-    return;
-  }
-  if (!name || typeof name !== 'string' || name.trim().length === 0) {
-    res.status(400).json({ error: 'Name is required' });
-    return;
-  }
+  const { email, password, name } = parsed.data;
 
   try {
     const { hash, salt } = await hashPassword(password);
 
     const result = await db.query(
       'INSERT INTO users (email, password_hash, password_salt, name) VALUES ($1, $2, $3, $4) RETURNING id, email, name',
-      [email.toLowerCase().trim(), hash, salt, name.trim()]
+      [email.toLowerCase().trim(), hash, salt, name]
     );
 
     const user = result.rows[0];
@@ -70,12 +42,12 @@ router.post('/register', async (req, res) => {
 
 // Login
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
+  const parsed = loginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
+  const { email, password } = parsed.data;
 
   try {
     const result = await db.query(
@@ -84,7 +56,6 @@ router.post('/login', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      // Generic error to not leak user existence
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
@@ -102,7 +73,6 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // No PII in logs — log only user ID
     res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
   } catch (err) {
     res.status(500).json({ error: 'Login failed' });
@@ -138,7 +108,6 @@ router.get('/admin/all', requireAuth, requireRole('admin'), async (req, res) => 
 
 // Delete account (requires auth, soft delete to preserve referential integrity)
 router.delete('/:id', requireAuth, async (req, res) => {
-  // Users can only delete their own account (or admin can delete any)
   if (req.user!.userId !== req.params.id && req.user!.role !== 'admin') {
     res.status(403).json({ error: 'Insufficient permissions' });
     return;

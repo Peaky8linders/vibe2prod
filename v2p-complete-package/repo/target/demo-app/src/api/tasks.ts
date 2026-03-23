@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../config/database';
 import { requireAuth } from '../middleware/auth';
+import { createTaskSchema, updateTaskSchema, bulkUpdateSchema } from '../schemas/validation';
 
 const router = Router();
 
@@ -19,25 +20,19 @@ router.get('/', requireAuth, async (req, res) => {
 
 // Create a task
 router.post('/', requireAuth, async (req, res) => {
-  const { title, description, priority, due_date } = req.body;
-
-  if (!title || typeof title !== 'string') {
-    res.status(400).json({ error: 'Title is required' });
+  const parsed = createTaskSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-
-  const allowedPriorities = ['low', 'medium', 'high', 'critical'];
-  if (priority && !allowedPriorities.includes(priority)) {
-    res.status(400).json({ error: 'Invalid priority' });
-    return;
-  }
+  const { title, description, priority, due_date } = parsed.data;
 
   try {
     const result = await db.query(
       `INSERT INTO tasks (user_id, title, description, priority, due_date, status)
        VALUES ($1, $2, $3, $4, $5, 'pending')
        RETURNING *`,
-      [req.user!.userId, title, description || null, priority || 'medium', due_date || null]
+      [req.user!.userId, title, description ?? null, priority, due_date ?? null]
     );
 
     // Notify via webhook (non-blocking, with error handling)
@@ -117,18 +112,12 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
 // Bulk status update — wrapped in transaction to prevent race conditions
 router.post('/bulk-update', requireAuth, async (req, res) => {
-  const { task_ids, new_status } = req.body;
-
-  if (!Array.isArray(task_ids) || task_ids.length === 0) {
-    res.status(400).json({ error: 'task_ids must be a non-empty array' });
+  const parsed = bulkUpdateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
     return;
   }
-
-  const allowedStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
-  if (!allowedStatuses.includes(new_status)) {
-    res.status(400).json({ error: 'Invalid status' });
-    return;
-  }
+  const { task_ids, new_status } = parsed.data;
 
   const client = await db.pool.connect();
   try {
