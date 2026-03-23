@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Compliance Guardian — Security Audit Report</title>
+<style>
+  /* ── Base ────────────────────────────────────────── */
+  :root {
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-600: #475569;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+    --red: #dc2626;
+    --orange: #ea580c;
+    --yellow: #ca8a04;
+    --green: #16a34a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--gray-800);
+    background: #fff;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 40px 32px; }
+
+  h1, h2, h3 { color: var(--gray-900); }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  h2 {
+    font-size: 20px;
+    color: var(--blue);
+    border-bottom: 2px solid var(--blue);
+    padding-bottom: 6px;
+    margin: 32px 0 16px;
+  }
+  h3 { font-size: 15px; margin: 16px 0 8px; }
+
+  /* ── Cover / Header ─────────────────────────────── */
+  .report-header {
+    text-align: center;
+    padding: 48px 0 32px;
+    border-bottom: 3px solid var(--blue);
+    margin-bottom: 32px;
+  }
+  .report-header .brand {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--blue);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .report-header h1 { font-size: 32px; color: var(--gray-900); }
+  .report-header .subtitle { color: var(--gray-600); font-size: 14px; margin-top: 4px; }
+  .report-header .meta { color: var(--gray-600); font-size: 12px; margin-top: 16px; }
+
+  .score-gauge { display: block; margin: 24px auto 0; }
+
+  /* ── Executive Summary ──────────────────────────── */
+  .exec-summary {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 8px;
+  }
+  .exec-summary p { margin-bottom: 8px; }
+
+  .severity-counts {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+  }
+  .severity-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .severity-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── Tables ─────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 24px;
+    font-size: 12.5px;
+  }
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  th {
+    background: var(--gray-100);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-600);
+  }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ── Progress Bars ──────────────────────────────── */
+  .bar-track {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 80px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  /* ── Findings ───────────────────────────────────── */
+  .finding-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 8px 0;
+    page-break-inside: avoid;
+  }
+  .finding-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .finding-id {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--gray-600);
+    font-weight: 600;
+  }
+  .finding-title { font-weight: 600; font-size: 13px; }
+  .finding-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+  }
+  .finding-category {
+    background: var(--gray-100);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .ref-badge {
+    background: var(--blue-light);
+    color: var(--blue);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .finding-evidence {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    overflow-x: auto;
+  }
+  .finding-evidence code {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11.5px;
+    color: var(--gray-800);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .finding-remediation {
+    font-size: 12px;
+    color: var(--gray-600);
+  }
+
+  .severity-badge {
+    display: inline-block;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .severity-group { margin-bottom: 24px; }
+  .severity-group h3 { margin-top: 20px; }
+
+  /* ── Roadmap ────────────────────────────────────── */
+  .roadmap-week {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+  }
+  .roadmap-week ul {
+    list-style: disc;
+    padding-left: 24px;
+    font-size: 12px;
+  }
+  .roadmap-week li { margin-bottom: 4px; }
+
+  /* ── Footer ─────────────────────────────────────── */
+  .report-footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 2px solid var(--gray-200);
+    text-align: center;
+    font-size: 11px;
+    color: var(--gray-600);
+  }
+  .report-footer .disclaimer {
+    margin-top: 12px;
+    font-style: italic;
+    font-size: 10px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ── Print CSS ──────────────────────────────────── */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 15mm 25mm 15mm;
+    }
+
+    body { font-size: 11px; }
+    .page { padding: 0; max-width: none; }
+
+    .report-header { padding-top: 24px; }
+
+    h2 { page-break-after: avoid; }
+    .finding-card { page-break-inside: avoid; }
+    .roadmap-week { page-break-inside: avoid; }
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; }
+
+    /* Section page breaks */
+    .section-break { page-break-before: always; }
+
+    /* Running header via CSS */
+    @top-center {
+      content: "AI Compliance Guardian — Security Audit Report";
+      font-size: 8px;
+      color: #94a3b8;
+    }
+
+    /* Ensure backgrounds print */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ─── Cover / Header ─────────────────────────── -->
+  <div class="report-header">
+    <div class="brand">AI Compliance Guardian</div>
+    <h1>Security Audit Report</h1>
+    <div class="subtitle">Automated Compliance Assessment</div>
+    <div class="meta">
+      <div>Generated: March 24, 2026 at 12:24 AM</div>
+      <div>Target: vibe2prod demo-app (post-remediation)</div>
+    </div>
+    
+    <svg width="200" height="200" viewBox="0 0 200 200" class="score-gauge">
+      <circle cx="100" cy="100" r="70" fill="none" stroke="#e5e7eb" stroke-width="14"/>
+      <circle cx="100" cy="100" r="70" fill="none" stroke="#ea580c" stroke-width="14"
+        stroke-dasharray="439.822971502571" stroke-dashoffset="219.9114857512855"
+        stroke-linecap="round" transform="rotate(-90 100 100)"/>
+      <text x="100" y="90" text-anchor="middle" font-size="36" font-weight="700" fill="#1e293b">50%</text>
+      <text x="100" y="120" text-anchor="middle" font-size="24" font-weight="600" fill="#ea580c">Grade F</text>
+    </svg>
+  </div>
+
+  <!-- ─── Executive Summary ──────────────────────── -->
+  <h2>Executive Summary</h2>
+  <div class="exec-summary">
+    <p>This automated compliance audit identified 40 open findings across the target codebase. The overall compliance score is 50% (Grade F). There are 13 critical (P0) findings requiring immediate attention. The most critical issue is hardcoded database connection url (SEC-001) in .env.test.</p>
+    <div class="severity-counts">
+      <div class="severity-count"><span class="severity-dot" style="background:var(--red)"></span> P0 Critical: 13</div>
+      <div class="severity-count"><span class="severity-dot" style="background:var(--orange)"></span> P1 High: 4</div>
+      <div class="severity-count"><span class="severity-dot" style="background:var(--yellow)"></span> P2 Medium: 23</div>
+      <div class="severity-count"><span class="severity-dot" style="background:var(--blue)"></span> P3 Low: 0</div>
+    </div>
+    <p><strong>Standards Covered:</strong> ISO 42001, NIST AI RMF, OWASP LLM, GDPR, SOC 2</p>
+  </div>
+
+  <!-- ─── Domain Compliance Scores ───────────────── -->
+  <div class="section-break"></div>
+  <h2>Domain Compliance Scores</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Domain</th>
+        <th class="num">Score</th>
+        <th class="num">Weight</th>
+        <th>Progress</th>
+        <th style="text-align:center">Status</th>
+        <th class="num">Findings</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>D01</td>
+        <td>AI Governance &amp; Accountability</td>
+        <td class="num">100%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D02</td>
+        <td>Risk Management &amp; Oversight</td>
+        <td class="num">68%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:68%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">4</td>
+      </tr>
+      <tr>
+        <td>D03</td>
+        <td>Model Lifecycle Security</td>
+        <td class="num">0%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">17</td>
+      </tr>
+      <tr>
+        <td>D04</td>
+        <td>Training &amp; Inference Data Security</td>
+        <td class="num">100%</td>
+        <td class="num">2.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D05</td>
+        <td>Model Integrity &amp; Adversarial Resistance</td>
+        <td class="num">100%</td>
+        <td class="num">1.5</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D06</td>
+        <td>Access Control &amp; Identity Management</td>
+        <td class="num">100%</td>
+        <td class="num">1.8</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D07</td>
+        <td>Infrastructure &amp; MLOps Security</td>
+        <td class="num">55%</td>
+        <td class="num">1.5</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:55%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">3</td>
+      </tr>
+      <tr>
+        <td>D08</td>
+        <td>Monitoring, Logging &amp; Incident Response</td>
+        <td class="num">52%</td>
+        <td class="num">1.2</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:52%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">16</td>
+      </tr>
+      <tr>
+        <td>D09</td>
+        <td>Third Party &amp; Supply Chain Risk</td>
+        <td class="num">100%</td>
+        <td class="num">1.3</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D10</td>
+        <td>Regulatory Compliance &amp; Ethics</td>
+        <td class="num">100%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ─── Top Findings ───────────────────────────── -->
+  <div class="section-break"></div>
+  <h2>Top Findings</h2>
+  <p style="color:var(--gray-600);font-size:12px;margin-bottom:12px;">
+    Showing top 30 of 40 open findings, sorted by severity.
+  </p>
+  <div class="severity-group"><h3>Critical Severity</h3>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-001</span>
+          <span class="finding-title">Hardcoded Database Connection URL</span>
+        </div>
+        <div class="finding-meta">
+          <span>.env.test:4</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>DATABASE_URL=postgresql://test:test@localhost:5432/testdb</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables for database URLs. Never embed credentials in connection strings in code.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-002</span>
+          <span class="finding-title">Hardcoded Database Connection URL</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:232</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>process.env.DATABASE_URL = process.env.DATABASE_URL || &#039;postgresql://mock:mock@localhost:5432/mock&#039;;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables for database URLs. Never embed credentials in connection strings in code.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-003</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\api\users.test.ts:55</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>.send({ email: &#039;dup@test.com&#039;, password: &#039;password123&#039;, name: &#039;Dup&#039; });</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-004</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\api\users.test.ts:67</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>.send({ email: &#039;new@test.com&#039;, password: &#039;password123&#039;, name: &#039;New&#039; });</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-005</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\api\users.test.ts:82</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>.send({ email: &#039;nobody@test.com&#039;, password: &#039;password123&#039; });</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-006</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\api\users.test.ts:96</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>.send({ email: &#039;user@test.com&#039;, password: &#039;wrongpassword&#039; });</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-007</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\api\users.test.ts:110</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>.send({ email: &#039;user@test.com&#039;, password: &#039;correctpassword&#039; });</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-008</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\schemas\validation.test.ts:16</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>password: &#039;password123&#039;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-009</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\schemas\validation.test.ts:25</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>password: &#039;password123&#039;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-010</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\__tests__\utils\crypto.test.ts:16</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>const password = &#039;correcthorsebatterystaple&#039;;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">INJ-001</span>
+          <span class="finding-title">SQL injection via template literal (reverse order)</span>
+        </div>
+        <div class="finding-meta">
+          <span>public\index.html:360</span>
+          <span class="finding-category">sql-injection</span>
+          <span class="ref-badge">CWE-89</span><span class="ref-badge">OWASP-A03:2021</span>
+        </div>
+        <div class="finding-evidence"><code>ok = r.status === 201 &amp;&amp; data.id; | el.textContent += `${ok ? &#039;✅&#039; : &#039;❌&#039;} Create task: ${r.status}\n`; ok ? pass++ : fail++; | const taskId = data.id;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use parameterized queries. Replace ${variable} with ? or $1 placeholders.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">INJ-002</span>
+          <span class="finding-title">SQL injection via template literal (reverse order)</span>
+        </div>
+        <div class="finding-meta">
+          <span>public\index.html:373</span>
+          <span class="finding-category">sql-injection</span>
+          <span class="ref-badge">CWE-89</span><span class="ref-badge">OWASP-A03:2021</span>
+        </div>
+        <div class="finding-evidence"><code>ok = r.status === 200 &amp;&amp; data.status === &#039;in_progress&#039;; | el.textContent += `${ok ? &#039;✅&#039; : &#039;❌&#039;} Update task status: ${r.status}\n`; ok ? pass++ : fail++; | </code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use parameterized queries. Replace ${variable} with ? or $1 placeholders.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">INJ-003</span>
+          <span class="finding-title">SQL injection via template literal (reverse order)</span>
+        </div>
+        <div class="finding-meta">
+          <span>public\index.html:405</span>
+          <span class="finding-category">sql-injection</span>
+          <span class="ref-badge">CWE-89</span><span class="ref-badge">OWASP-A03:2021</span>
+        </div>
+        <div class="finding-evidence"><code>ok = r.status === 200 &amp;&amp; data.deleted; | el.textContent += `${ok ? &#039;✅&#039; : &#039;❌&#039;} Delete task: ${r.status}\n`; ok ? pass++ : fail++; | </code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use parameterized queries. Replace ${variable} with ? or $1 placeholders.</div>
+      </div></div><div class="severity-group"><h3>High Severity</h3>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">ACL-001</span>
+          <span class="finding-title">State-changing routes without CSRF protection</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\api\tasks.ts:22</span>
+          <span class="finding-category">missing-csrf</span>
+          <span class="ref-badge">CWE-352</span><span class="ref-badge">OWASP-A01:2021</span>
+        </div>
+        <div class="finding-evidence"><code>router.post(&#039;/&#039;, requireAuth, async (req, res) =&gt; {</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">ACL-002</span>
+          <span class="finding-title">State-changing routes without CSRF protection</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\api\users.ts:11</span>
+          <span class="finding-category">missing-csrf</span>
+          <span class="ref-badge">CWE-352</span><span class="ref-badge">OWASP-A01:2021</span>
+        </div>
+        <div class="finding-evidence"><code>router.post(&#039;/register&#039;, async (req, res) =&gt; {</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">ACL-003</span>
+          <span class="finding-title">Route without auth middleware: /payment</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\api\webhooks.ts:25</span>
+          <span class="finding-category">missing-auth</span>
+          <span class="ref-badge">CWE-306</span><span class="ref-badge">OWASP-A07:2021</span><span class="ref-badge">SOC2-CC6.1</span>
+        </div>
+        <div class="finding-evidence"><code>router.post(&#039;/payment&#039;, async (req, res) =&gt; {</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">ACL-004</span>
+          <span class="finding-title">State-changing routes without CSRF protection</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\api\webhooks.ts:25</span>
+          <span class="finding-category">missing-csrf</span>
+          <span class="ref-badge">CWE-352</span><span class="ref-badge">OWASP-A01:2021</span>
+        </div>
+        <div class="finding-evidence"><code>router.post(&#039;/payment&#039;, async (req, res) =&gt; {</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</div>
+      </div></div><div class="severity-group"><h3>Medium Severity</h3>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">PII-001</span>
+          <span class="finding-title">Full user record in response</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:59</span>
+          <span class="finding-category">pii-exposure</span>
+          <span class="ref-badge">CWE-200</span><span class="ref-badge">OWASP-A01:2021</span><span class="ref-badge">GDPR-Art5</span>
+        </div>
+        <div class="finding-evidence"><code>const user = tables.users.find(u =&gt; u.email === email &amp;&amp; !u.deleted_at);</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">PII-002</span>
+          <span class="finding-title">Full user record in response</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:65</span>
+          <span class="finding-category">pii-exposure</span>
+          <span class="ref-badge">CWE-200</span><span class="ref-badge">OWASP-A01:2021</span><span class="ref-badge">GDPR-Art5</span>
+        </div>
+        <div class="finding-evidence"><code>const user = tables.users.find(u =&gt; u.id === p[0] &amp;&amp; !u.deleted_at);</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">PII-003</span>
+          <span class="finding-title">Full user record in response</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:85</span>
+          <span class="finding-category">pii-exposure</span>
+          <span class="ref-badge">CWE-200</span><span class="ref-badge">OWASP-A01:2021</span><span class="ref-badge">GDPR-Art5</span>
+        </div>
+        <div class="finding-evidence"><code>const user = tables.users.find(u =&gt; u.id === p[0] &amp;&amp; !u.deleted_at);</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">PII-004</span>
+          <span class="finding-title">Full user record in response</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:114</span>
+          <span class="finding-category">pii-exposure</span>
+          <span class="ref-badge">CWE-200</span><span class="ref-badge">OWASP-A01:2021</span><span class="ref-badge">GDPR-Art5</span>
+        </div>
+        <div class="finding-evidence"><code>const task = tables.tasks.find(t =&gt; t.id === p[0] &amp;&amp; t.user_id === p[1]);</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">PII-005</span>
+          <span class="finding-title">Full user record in response</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:121</span>
+          <span class="finding-category">pii-exposure</span>
+          <span class="ref-badge">CWE-200</span><span class="ref-badge">OWASP-A01:2021</span><span class="ref-badge">GDPR-Art5</span>
+        </div>
+        <div class="finding-evidence"><code>const task = tables.tasks.find(t =&gt; t.id === id &amp;&amp; t.user_id === userId);</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">PII-006</span>
+          <span class="finding-title">Full user record in response</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:173</span>
+          <span class="finding-category">pii-exposure</span>
+          <span class="ref-badge">CWE-200</span><span class="ref-badge">OWASP-A01:2021</span><span class="ref-badge">GDPR-Art5</span>
+        </div>
+        <div class="finding-evidence"><code>const sub = tables.subscriptions.find(s =&gt; s.user_id === p[1]);</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">PII-007</span>
+          <span class="finding-title">Full user record in response</span>
+        </div>
+        <div class="finding-meta">
+          <span>src\dev-server.ts:182</span>
+          <span class="finding-category">pii-exposure</span>
+          <span class="ref-badge">CWE-200</span><span class="ref-badge">OWASP-A01:2021</span><span class="ref-badge">GDPR-Art5</span>
+        </div>
+        <div class="finding-evidence"><code>const sub = tables.subscriptions.find(s =&gt; s.user_id === p[0]);</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">SCA-001</span>
+          <span class="finding-title">Floating dependency version: cookie-parser@^1.4.7</span>
+        </div>
+        <div class="finding-meta">
+          <span>package.json:14</span>
+          <span class="finding-category">floating-version</span>
+          <span class="ref-badge">CWE-829</span><span class="ref-badge">SLSA-L1</span>
+        </div>
+        <div class="finding-evidence"><code>&quot;cookie-parser&quot;: &quot;^1.4.7&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">SCA-002</span>
+          <span class="finding-title">Floating dependency version: cors@^2.8.5</span>
+        </div>
+        <div class="finding-meta">
+          <span>package.json:15</span>
+          <span class="finding-category">floating-version</span>
+          <span class="ref-badge">CWE-829</span><span class="ref-badge">SLSA-L1</span>
+        </div>
+        <div class="finding-evidence"><code>&quot;cors&quot;: &quot;^2.8.5&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">SCA-003</span>
+          <span class="finding-title">Floating dependency version: express@^4.21.0</span>
+        </div>
+        <div class="finding-meta">
+          <span>package.json:16</span>
+          <span class="finding-category">floating-version</span>
+          <span class="ref-badge">CWE-829</span><span class="ref-badge">SLSA-L1</span>
+        </div>
+        <div class="finding-evidence"><code>&quot;express&quot;: &quot;^4.21.0&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">SCA-004</span>
+          <span class="finding-title">Floating dependency version: jsonwebtoken@^9.0.2</span>
+        </div>
+        <div class="finding-meta">
+          <span>package.json:17</span>
+          <span class="finding-category">floating-version</span>
+          <span class="ref-badge">CWE-829</span><span class="ref-badge">SLSA-L1</span>
+        </div>
+        <div class="finding-evidence"><code>&quot;jsonwebtoken&quot;: &quot;^9.0.2&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">SCA-005</span>
+          <span class="finding-title">Floating dependency version: pg@^8.13.0</span>
+        </div>
+        <div class="finding-meta">
+          <span>package.json:18</span>
+          <span class="finding-category">floating-version</span>
+          <span class="ref-badge">CWE-829</span><span class="ref-badge">SLSA-L1</span>
+        </div>
+        <div class="finding-evidence"><code>&quot;pg&quot;: &quot;^8.13.0&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ca8a04">P2 MEDIUM</span>
+          <span class="finding-id">SCA-006</span>
+          <span class="finding-title">Floating dependency version: zod@^3.23.0</span>
+        </div>
+        <div class="finding-meta">
+          <span>package.json:19</span>
+          <span class="finding-category">floating-version</span>
+          <span class="ref-badge">CWE-829</span><span class="ref-badge">SLSA-L1</span>
+        </div>
+        <div class="finding-evidence"><code>&quot;zod&quot;: &quot;^3.23.0&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</div>
+      </div></div>
+
+  <!-- ─── Compliance Framework Mapping ───────────── -->
+  <div class="section-break"></div>
+  <h2>Compliance Framework Mapping</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Framework</th>
+        <th class="num">Related Findings</th>
+        <th class="num">Failing Controls</th>
+        <th style="text-align:center">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>ISO 42001</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">PASS</td>
+      </tr>
+      <tr>
+        <td>NIST AI RMF</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">PASS</td>
+      </tr>
+      <tr>
+        <td>OWASP LLM</td>
+        <td class="num">40</td>
+        <td class="num">6</td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">FAIL</td>
+      </tr>
+      <tr>
+        <td>GDPR</td>
+        <td class="num">7</td>
+        <td class="num">1</td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">FAIL</td>
+      </tr>
+      <tr>
+        <td>SOC 2</td>
+        <td class="num">1</td>
+        <td class="num">1</td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">FAIL</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ─── Remediation Roadmap ────────────────────── -->
+  <div class="section-break"></div>
+  <h2>Remediation Roadmap</h2>
+  
+      <div class="roadmap-week">
+        <h3>Week 1: Critical (P0)</h3>
+        <ul><li>[SEC-001] Use environment variables for database URLs. Never embed credentials in connection strings in code.</li><li>[SEC-002] Use environment variables for database URLs. Never embed credentials in connection strings in code.</li><li>[SEC-003] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-004] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-005] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-006] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-007] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-008] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-009] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-010] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[INJ-001] Use parameterized queries. Replace ${variable} with ? or $1 placeholders.</li><li>[INJ-002] Use parameterized queries. Replace ${variable} with ? or $1 placeholders.</li><li>[INJ-003] Use parameterized queries. Replace ${variable} with ? or $1 placeholders.</li></ul>
+      </div>
+      <div class="roadmap-week">
+        <h3>Week 2: High (P1)</h3>
+        <ul><li>[ACL-001] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-002] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-003] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-004] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li></ul>
+      </div>
+      <div class="roadmap-week">
+        <h3>Weeks 3–4: Medium &amp; Low (P2/P3)</h3>
+        <ul><li>[PII-001] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-002] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-003] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-004] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-005] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-006] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-007] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[SCA-001] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-002] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-003] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-004] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-005] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-006] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-007] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-008] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-009] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-010] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-011] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-012] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-013] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-014] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-015] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li><li>[SCA-016] Pin dependency versions to exact versions (remove ^ or ~ prefix). Use a lockfile for reproducible builds.</li></ul>
+      </div>
+
+  <!-- ─── Footer ─────────────────────────────────── -->
+  <div class="report-footer">
+    <div>Generated by <strong>AI Compliance Guardian</strong></div>
+    <div>March 24, 2026 at 12:24 AM</div>
+    <div class="disclaimer">
+      This report is generated by automated scanning tools and should be reviewed by qualified
+      security professionals before making compliance decisions. Automated scanners may produce
+      false positives and cannot detect all vulnerability classes. This report does not constitute
+      legal advice or a formal compliance certification.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

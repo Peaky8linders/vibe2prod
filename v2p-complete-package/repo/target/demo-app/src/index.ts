@@ -1,8 +1,10 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { taskRouter } from './api/tasks';
 import { userRouter } from './api/users';
 import { webhookRouter } from './api/webhooks';
+import { csrfProtection, csrfTokenIssuer } from './middleware/csrf';
 
 const app = express();
 
@@ -26,6 +28,13 @@ app.use(express.json({
     (req as Request & { rawBody?: Buffer }).rawBody = buf;
   },
 }));
+
+// Cookie parser (needed for CSRF)
+app.use(cookieParser());
+
+// CSRF protection — issue tokens on GET, validate on state-changing methods
+app.use(csrfTokenIssuer);
+app.use(csrfProtection);
 
 // Security headers
 app.use((_req, res, next) => {
