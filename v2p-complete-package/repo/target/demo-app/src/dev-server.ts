@@ -228,9 +228,14 @@ const mockClient = {
   release: () => {},
 };
 
-// Set env vars BEFORE importing anything — use env vars if available, fallback to dev defaults
+// Set env vars BEFORE importing anything — use env vars if available, fallback to dev defaults.
+// This dev server uses mock DB — reject startup if pointing at a real database.
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://mock:mock@localhost:5432/mock';
-process.env.JWT_SECRET = process.env.JWT_SECRET || require('crypto').randomBytes(32).toString('hex');
+if (!process.env.DATABASE_URL.includes('mock') && !process.env.DATABASE_URL.includes('localhost')) {
+  throw new Error('dev-server.ts must not be used with non-local databases. Use the production entrypoint instead.');
+}
+// Deterministic dev-only secret — safe because dev-server only runs against mock DB
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev-server-mock-jwt-secret-not-for-production';
 process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001';
 process.env.PORT = process.env.PORT || '3001';
 
