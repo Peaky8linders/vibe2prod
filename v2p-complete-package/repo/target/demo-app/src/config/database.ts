@@ -1,11 +1,13 @@
 import pg from 'pg';
 
-// TODO: move to env vars
-const pool = new pg.Pool({
-  connectionString: 'postgresql://admin:supersecret123@db.internal.company.com:5432/taskdb',
-});
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+
+const pool = new pg.Pool({ connectionString });
 
 export const db = {
-  query: (text: string, params?: any[]) => pool.query(text, params),
+  query: (text: string, params?: unknown[]) => pool.query(text, params),
   pool,
 };
