@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev-server",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npx tsx src/dev-server.ts"],
+      "port": 3001,
+      "cwd": "v2p-complete-package/repo/target/demo-app"
+    }
+  ]
+}

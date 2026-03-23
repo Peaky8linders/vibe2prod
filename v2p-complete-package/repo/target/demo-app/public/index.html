@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe-to-Prod — API Test UI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #e0e0e0; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 24px; margin-bottom: 4px; color: #fff; }
+    .subtitle { color: #888; margin-bottom: 24px; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: #151515; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; }
+    .card h2 { font-size: 16px; margin-bottom: 16px; color: #ccc; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 8px 12px; background: #0a0a0a; border: 1px solid #333; border-radius: 6px; color: #e0e0e0; font-size: 14px; }
+    .field textarea { min-height: 60px; resize: vertical; }
+    button { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; margin-right: 8px; margin-bottom: 8px; }
+    button:hover { background: #1d4ed8; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    button.secondary { background: #333; }
+    button.secondary:hover { background: #444; }
+    .response { margin-top: 12px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 12px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 12px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    .response.success { border-color: #16a34a; }
+    .response.error { border-color: #dc2626; }
+    .status-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 12px 16px; background: #151515; border: 1px solid #2a2a2a; border-radius: 8px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.green { background: #16a34a; }
+    .status-dot.red { background: #dc2626; }
+    .status-dot.yellow { background: #ca8a04; }
+    .token-display { font-size: 11px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 400px; }
+    .task-list { list-style: none; }
+    .task-list li { padding: 8px 12px; border-bottom: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+    .task-list li:last-child { border-bottom: none; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+    .badge.critical { background: #dc262633; color: #f87171; }
+    .badge.high { background: #ea580c33; color: #fb923c; }
+    .badge.medium { background: #ca8a0433; color: #facc15; }
+    .badge.low { background: #16a34a33; color: #4ade80; }
+    .badge.pending { background: #2563eb33; color: #60a5fa; }
+    .badge.completed { background: #16a34a33; color: #4ade80; }
+    #log { grid-column: 1 / -1; }
+    .log-entry { padding: 4px 0; border-bottom: 1px solid #1a1a1a; font-size: 12px; }
+    .log-entry .method { font-weight: 700; width: 50px; display: inline-block; }
+    .log-entry .method.GET { color: #60a5fa; }
+    .log-entry .method.POST { color: #4ade80; }
+    .log-entry .method.PUT { color: #facc15; }
+    .log-entry .method.DELETE { color: #f87171; }
+    .log-entry .status { margin-left: 8px; }
+    .log-entry .status.s2xx { color: #4ade80; }
+    .log-entry .status.s4xx { color: #facc15; }
+    .log-entry .status.s5xx { color: #f87171; }
+    .actions { display: flex; flex-wrap: wrap; gap: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vibe-to-Prod API Test UI</h1>
+    <p class="subtitle">End-to-end testing for the hardened Express + PostgreSQL task API</p>
+
+    <div class="status-bar">
+      <div class="status-dot" id="serverStatus"></div>
+      <span id="serverStatusText">Checking server...</span>
+      <span class="token-display" id="tokenDisplay">No token</span>
+    </div>
+
+    <div class="grid">
+      <!-- Auth Card -->
+      <div class="card">
+        <h2>Authentication</h2>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="email" value="test@example.com">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="password" value="password123">
+        </div>
+        <div class="field">
+          <label>Name (for registration)</label>
+          <input type="text" id="name" value="Test User">
+        </div>
+        <div class="actions">
+          <button onclick="register()">Register</button>
+          <button onclick="login()">Login</button>
+          <button onclick="getProfile()">Get Profile</button>
+          <button class="secondary" onclick="getAdminUsers()">Admin: List Users</button>
+        </div>
+        <div class="response" id="authResponse"></div>
+      </div>
+
+      <!-- Tasks Card -->
+      <div class="card">
+        <h2>Tasks</h2>
+        <div class="field">
+          <label>Title</label>
+          <input type="text" id="taskTitle" value="Fix production bug">
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <textarea id="taskDesc">Critical issue in payment processing</textarea>
+        </div>
+        <div class="field">
+          <label>Priority</label>
+          <select id="taskPriority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="createTask()">Create Task</button>
+          <button onclick="listTasks()">List My Tasks</button>
+          <button onclick="searchTasks()">Search</button>
+        </div>
+        <div class="response" id="taskResponse"></div>
+      </div>
+
+      <!-- Task Operations -->
+      <div class="card">
+        <h2>Task Operations</h2>
+        <div class="field">
+          <label>Task ID (from list above)</label>
+          <input type="text" id="taskId" placeholder="paste task ID here">
+        </div>
+        <div class="field">
+          <label>New Status</label>
+          <select id="newStatus">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button onclick="updateTask()">Update Status</button>
+          <button class="danger" onclick="deleteTask()">Delete Task</button>
+          <button onclick="bulkUpdate()">Bulk Update All → Completed</button>
+        </div>
+        <div class="response" id="opsResponse"></div>
+      </div>
+
+      <!-- Health & Security -->
+      <div class="card">
+        <h2>Health & Security Tests</h2>
+        <div class="actions">
+          <button onclick="healthCheck()">Health Check</button>
+          <button onclick="testNoAuth()">Test No Auth → 401</button>
+          <button onclick="testSQLInjection()">Test SQL Injection</button>
+          <button onclick="testInvalidPriority()">Test Invalid Priority → 400</button>
+          <button onclick="testWeakPassword()">Test Weak Password → 400</button>
+          <button class="secondary" onclick="runAllTests()">Run All E2E Tests</button>
+        </div>
+        <div class="response" id="secResponse"></div>
+      </div>
+
+      <!-- Request Log -->
+      <div class="card" id="log">
+        <h2>Request Log</h2>
+        <div id="logEntries"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = window.location.origin;
+    let token = '';
+    let allTaskIds = [];
+
+    function setToken(t) {
+      token = t;
+      document.getElementById('tokenDisplay').textContent = t ? `Token: ${t.substring(0, 30)}...` : 'No token';
+    }
+
+    function headers() {
+      const h = { 'Content-Type': 'application/json' };
+      if (token) h['Authorization'] = `Bearer ${token}`;
+      return h;
+    }
+
+    function logRequest(method, url, status, body) {
+      const el = document.getElementById('logEntries');
+      const statusClass = status < 300 ? 's2xx' : status < 500 ? 's4xx' : 's5xx';
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="method ${method}">${method}</span> ${url} <span class="status ${statusClass}">${status}</span> <span style="color:#555">${typeof body === 'string' ? body.substring(0, 80) : JSON.stringify(body).substring(0, 80)}</span>`;
+      el.prepend(entry);
+    }
+
+    async function api(method, path, body, responseEl) {
+      const el = document.getElementById(responseEl);
+      try {
+        const opts = { method, headers: headers() };
+        if (body && method !== 'GET') opts.body = JSON.stringify(body);
+        const res = await fetch(`${BASE}${path}`, opts);
+        const data = await res.json().catch(() => ({}));
+        el.textContent = JSON.stringify(data, null, 2);
+        el.className = `response ${res.ok ? 'success' : 'error'}`;
+        logRequest(method, path, res.status, data);
+        return { status: res.status, data };
+      } catch (err) {
+        el.textContent = `Error: ${err.message}`;
+        el.className = 'response error';
+        logRequest(method, path, 0, err.message);
+        return { status: 0, data: null };
+      }
+    }
+
+    // Auth
+    async function register() {
+      const r = await api('POST', '/api/users/register', {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        name: document.getElementById('name').value,
+      }, 'authResponse');
+      if (r.data?.token) setToken(r.data.token);
+    }
+
+    async function login() {
+      const r = await api('POST', '/api/users/login', {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+      }, 'authResponse');
+      if (r.data?.token) setToken(r.data.token);
+    }
+
+    async function getProfile() {
+      await api('GET', '/api/users/profile', null, 'authResponse');
+    }
+
+    async function getAdminUsers() {
+      await api('GET', '/api/users/admin/all', null, 'authResponse');
+    }
+
+    // Tasks
+    async function createTask() {
+      await api('POST', '/api/tasks', {
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDesc').value,
+        priority: document.getElementById('taskPriority').value,
+      }, 'taskResponse');
+    }
+
+    async function listTasks() {
+      const r = await api('GET', '/api/tasks', null, 'taskResponse');
+      if (Array.isArray(r.data)) {
+        allTaskIds = r.data.map(t => t.id);
+        if (r.data.length > 0) {
+          document.getElementById('taskId').value = r.data[0].id;
+        }
+      }
+    }
+
+    async function searchTasks() {
+      await api('GET', '/api/tasks/search?q=' + encodeURIComponent(document.getElementById('taskTitle').value), null, 'taskResponse');
+    }
+
+    // Task Operations
+    async function updateTask() {
+      const id = document.getElementById('taskId').value;
+      if (!id) { alert('Enter a task ID'); return; }
+      await api('PUT', `/api/tasks/${id}`, {
+        status: document.getElementById('newStatus').value,
+      }, 'opsResponse');
+    }
+
+    async function deleteTask() {
+      const id = document.getElementById('taskId').value;
+      if (!id) { alert('Enter a task ID'); return; }
+      await api('DELETE', `/api/tasks/${id}`, null, 'opsResponse');
+    }
+
+    async function bulkUpdate() {
+      if (allTaskIds.length === 0) {
+        document.getElementById('opsResponse').textContent = 'No tasks to update. List tasks first.';
+        return;
+      }
+      await api('POST', '/api/tasks/bulk-update', {
+        task_ids: allTaskIds,
+        new_status: 'completed',
+      }, 'opsResponse');
+    }
+
+    // Security tests
+    async function healthCheck() {
+      await api('GET', '/health', null, 'secResponse');
+    }
+
+    async function testNoAuth() {
+      const oldToken = token;
+      setToken('');
+      const r = await api('GET', '/api/tasks', null, 'secResponse');
+      setToken(oldToken);
+      document.getElementById('secResponse').textContent += `\n\n${r.status === 401 ? '✅ PASS' : '❌ FAIL'}: Unauthenticated request returned ${r.status}`;
+    }
+
+    async function testSQLInjection() {
+      const r = await api('GET', "/api/tasks/search?q=' OR 1=1 --", null, 'secResponse');
+      document.getElementById('secResponse').textContent += `\n\n${r.status !== 500 ? '✅ PASS' : '❌ FAIL'}: SQL injection attempt returned ${r.status} (not 500)`;
+    }
+
+    async function testInvalidPriority() {
+      const r = await api('POST', '/api/tasks', {
+        title: 'Test',
+        priority: 'INVALID_PRIORITY',
+      }, 'secResponse');
+      document.getElementById('secResponse').textContent += `\n\n${r.status === 400 ? '✅ PASS' : '❌ FAIL'}: Invalid priority returned ${r.status}`;
+    }
+
+    async function testWeakPassword() {
+      const oldToken = token;
+      setToken('');
+      const r = await api('POST', '/api/users/register', {
+        email: 'weak@test.com',
+        password: '123',
+        name: 'Weak',
+      }, 'secResponse');
+      setToken(oldToken);
+      document.getElementById('secResponse').textContent += `\n\n${r.status === 400 ? '✅ PASS' : '❌ FAIL'}: Weak password returned ${r.status}`;
+    }
+
+    async function runAllTests() {
+      const el = document.getElementById('secResponse');
+      el.textContent = 'Running all E2E tests...\n';
+      let pass = 0, fail = 0;
+
+      // 1. Health check
+      let r = await fetch(`${BASE}/health`);
+      let ok = r.status === 200;
+      el.textContent += `${ok ? '✅' : '❌'} Health check: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 2. Register
+      r = await fetch(`${BASE}/api/users/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `e2e-${Date.now()}@test.com`, password: 'testpass123', name: 'E2E User' }) });
+      let data = await r.json();
+      ok = r.status === 201 && data.token;
+      el.textContent += `${ok ? '✅' : '❌'} Register: ${r.status}\n`; ok ? pass++ : fail++;
+      const testToken = data.token;
+
+      // 3. Login
+      r = await fetch(`${BASE}/api/users/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: data.user?.email, password: 'testpass123' }) });
+      data = await r.json();
+      ok = r.status === 200 && data.token;
+      el.textContent += `${ok ? '✅' : '❌'} Login: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 4. Profile (no password_hash)
+      const authH = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${testToken}` };
+      r = await fetch(`${BASE}/api/users/profile`, { headers: authH });
+      data = await r.json();
+      ok = r.status === 200 && !data.password_hash;
+      el.textContent += `${ok ? '✅' : '❌'} Profile (no password_hash): ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 5. Create task
+      r = await fetch(`${BASE}/api/tasks`, { method: 'POST', headers: authH, body: JSON.stringify({ title: 'E2E Test Task', description: 'Created by automated test', priority: 'high' }) });
+      data = await r.json();
+      ok = r.status === 201 && data.id;
+      el.textContent += `${ok ? '✅' : '❌'} Create task: ${r.status}\n`; ok ? pass++ : fail++;
+      const taskId = data.id;
+
+      // 6. List tasks
+      r = await fetch(`${BASE}/api/tasks`, { headers: authH });
+      data = await r.json();
+      ok = r.status === 200 && Array.isArray(data) && data.length > 0;
+      el.textContent += `${ok ? '✅' : '❌'} List tasks (${data.length} found): ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 7. Update task
+      r = await fetch(`${BASE}/api/tasks/${taskId}`, { method: 'PUT', headers: authH, body: JSON.stringify({ status: 'in_progress' }) });
+      data = await r.json();
+      ok = r.status === 200 && data.status === 'in_progress';
+      el.textContent += `${ok ? '✅' : '❌'} Update task status: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 8. Search tasks
+      r = await fetch(`${BASE}/api/tasks/search?q=E2E`, { headers: authH });
+      data = await r.json();
+      ok = r.status === 200 && data.length > 0;
+      el.textContent += `${ok ? '✅' : '❌'} Search tasks: ${r.status} (${data.length} results)\n`; ok ? pass++ : fail++;
+
+      // 9. No auth → 401
+      r = await fetch(`${BASE}/api/tasks`);
+      ok = r.status === 401;
+      el.textContent += `${ok ? '✅' : '❌'} No auth → 401: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 10. Invalid priority → 400
+      r = await fetch(`${BASE}/api/tasks`, { method: 'POST', headers: authH, body: JSON.stringify({ title: 'Test', priority: 'INVALID' }) });
+      ok = r.status === 400;
+      el.textContent += `${ok ? '✅' : '❌'} Invalid priority → 400: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 11. Weak password → 400
+      r = await fetch(`${BASE}/api/users/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'w@t.com', password: '12', name: 'X' }) });
+      ok = r.status === 400;
+      el.textContent += `${ok ? '✅' : '❌'} Weak password → 400: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 12. SQL injection attempt
+      r = await fetch(`${BASE}/api/tasks/search?q=' OR 1=1 --`, { headers: authH });
+      ok = r.status !== 500;
+      el.textContent += `${ok ? '✅' : '❌'} SQL injection safe: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 13. Delete task
+      r = await fetch(`${BASE}/api/tasks/${taskId}`, { method: 'DELETE', headers: authH });
+      data = await r.json();
+      ok = r.status === 200 && data.deleted;
+      el.textContent += `${ok ? '✅' : '❌'} Delete task: ${r.status}\n`; ok ? pass++ : fail++;
+
+      // 14. Verify deletion
+      r = await fetch(`${BASE}/api/tasks`, { headers: authH });
+      data = await r.json();
+      const deleted = !data.find(t => t.id === taskId);
+      el.textContent += `${deleted ? '✅' : '❌'} Task deleted from list: ${deleted}\n`; deleted ? pass++ : fail++;
+
+      el.textContent += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      el.textContent += `Results: ${pass}/${pass + fail} passed`;
+      el.className = `response ${fail === 0 ? 'success' : 'error'}`;
+      logRequest('ALL', '/e2e-tests', fail === 0 ? 200 : 500, `${pass}/${pass+fail} passed`);
+    }
+
+    // Check server on load
+    async function checkServer() {
+      try {
+        const r = await fetch(`${BASE}/health`);
+        const data = await r.json();
+        document.getElementById('serverStatus').className = 'status-dot green';
+        document.getElementById('serverStatusText').textContent = `Server OK — uptime: ${Math.round(data.uptime)}s`;
+      } catch {
+        document.getElementById('serverStatus').className = 'status-dot red';
+        document.getElementById('serverStatusText').textContent = 'Server offline';
+      }
+    }
+    checkServer();
+    setInterval(checkServer, 10000);
+  </script>
+</body>
+</html>
