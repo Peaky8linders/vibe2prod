@@ -1,0 +1,5 @@
+{
+  "_comment": "Gold-labeled validation set for L2 judge calibration. Domain expert must label these. Target: 50+ examples, balanced pass/fail.",
+  "_instructions": "For each example: provide the file content and your binary judgment. Run scripts/validate-judges.ts to measure precision + recall.",
+  "labels": []
+}

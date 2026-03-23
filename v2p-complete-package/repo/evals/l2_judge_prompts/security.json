@@ -1,0 +1,7 @@
+{
+  "id": "SEC-001",
+  "dimension": "security-auth",
+  "question": "Does this API endpoint enforce authentication and authorization before any data access or mutation?",
+  "pass_criteria": "API endpoints must: (1) require authentication middleware before handler logic, (2) verify authorization (role/permission check) for protected resources, (3) not expose data in error messages that reveals internal state, (4) use parameterized queries or ORM methods (no string concatenation for SQL).",
+  "file_glob": "target/src/api/**/*.{ts,js}"
+}

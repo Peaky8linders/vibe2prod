@@ -1,0 +1,43 @@
+{
+  "name": "vibe-to-prod",
+  "version": "1.0.0",
+  "description": "Autonomous production hardening for vibe-coded projects",
+  "type": "module",
+  "bin": {
+    "v2p": "./cli.ts"
+  },
+  "scripts": {
+    "v2p": "tsx cli.ts",
+    "scan": "tsx scripts/scan-defects.ts",
+    "scan:llm": "tsx scripts/scan-defects.ts --llm",
+    "capture": "tsx scripts/capture-behavior.ts",
+    "eval": "tsx evals/harness.ts",
+    "eval:l1": "tsx evals/l1-assertions.ts",
+    "eval:l2": "tsx evals/l2-judges.ts",
+    "eval:security": "tsx evals/security-gates.ts",
+    "score": "tsx scripts/readiness-score.ts",
+    "score:detail": "tsx scripts/readiness-score.ts --detail",
+    "fix": "bash scripts/run-fix.sh",
+    "overnight": "bash scripts/run-overnight.sh",
+    "report": "tsx scripts/generate-report.ts",
+    "launch-report": "tsx scripts/generate-launch-report.ts",
+    "badge": "tsx scripts/generate-badge.ts",
+    "harden": "tsx scripts/harden.ts",
+    "seal": "bash scripts/seal-evals.sh",
+    "validate-judges": "tsx scripts/validate-judges.ts",
+    "status": "tsx cli.ts status"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "glob": "^11.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

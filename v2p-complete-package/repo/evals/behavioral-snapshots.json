@@ -1,0 +1,5 @@
+{
+  "_comment": "Behavioral snapshots — captured BEFORE hardening begins. Each entry is a behavioral contract that must be preserved.",
+  "_instructions": "Run scripts/capture-behavior.ts to auto-generate. Add manual entries for behaviors that matter but aren't testable via CLI.",
+  "snapshots": []
+}

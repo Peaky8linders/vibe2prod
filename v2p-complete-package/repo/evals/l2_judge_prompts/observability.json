@@ -1,0 +1,7 @@
+{
+  "id": "OB-001",
+  "dimension": "observability",
+  "question": "Does this file use structured logging with request context for all significant operations (API handlers, service methods, error paths)?",
+  "pass_criteria": "Significant operations must: (1) use a structured logger (not console.log), (2) include request ID or correlation ID in log context, (3) log on entry and exit/error for API handlers, (4) include relevant business context (user ID, resource ID) without PII.",
+  "file_glob": "target/src/**/*.{ts,js}"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "IV-001",
+  "dimension": "input-validation",
+  "question": "Does this file validate all external inputs (API request bodies, query params, URL params, environment variables) using a runtime schema before processing?",
+  "pass_criteria": "Every function that accepts external input must: (1) validate input shape with a runtime schema (Zod, Joi, Yup, or equivalent), (2) return typed validated output, (3) reject invalid input with a descriptive 400-level error, (4) not use `any` or type assertions to bypass validation.",
+  "file_glob": "target/src/**/*.{ts,js}"
+}

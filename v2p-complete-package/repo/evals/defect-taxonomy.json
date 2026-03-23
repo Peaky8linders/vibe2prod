@@ -1,0 +1,36 @@
+{
+  "_comment": "Defect taxonomy — populated by scripts/scan-defects.ts and human triage",
+  "_instructions": "Each defect is a specific, binary production risk. Priority: P0 (blocks deploy) > P1 (must fix) > P2 (should fix) > P3 (nice to have)",
+  "dimensions": {
+    "security": {
+      "defects": []
+    },
+    "data-integrity": {
+      "defects": []
+    },
+    "error-handling": {
+      "defects": []
+    },
+    "input-validation": {
+      "defects": []
+    },
+    "observability": {
+      "defects": []
+    },
+    "test-coverage": {
+      "defects": []
+    }
+  },
+  "defect_schema": {
+    "id": "EH-001",
+    "dimension": "error-handling",
+    "priority": "P1",
+    "file": "target/src/api/users.ts",
+    "line_range": [45, 62],
+    "description": "fetch() call to external API has no try/catch — unhandled rejection crashes the process",
+    "fixed": false,
+    "fix_commit": null,
+    "attempts": 0,
+    "needs_human_review": false
+  }
+}

@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibe-to-Prod: Autonomous Production Hardening</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface-2: #18181b;
+    --border: #27272a;
+    --border-accent: #3f3f46;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #f97316;
+    --accent-dim: rgba(249, 115, 22, 0.15);
+    --green: #22c55e;
+    --green-dim: rgba(34, 197, 94, 0.12);
+    --red: #ef4444;
+    --red-dim: rgba(239, 68, 68, 0.1);
+    --blue: #3b82f6;
+    --blue-dim: rgba(59, 130, 246, 0.1);
+    --purple: #a855f7;
+    --purple-dim: rgba(168, 85, 247, 0.1);
+    --yellow: #eab308;
+    --yellow-dim: rgba(234, 179, 8, 0.1);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --serif: 'DM Serif Display', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 6rem 0 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(249,115,22,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 640px;
+    line-height: 1.8;
+  }
+  .hero-meta {
+    margin-top: 2.5rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .hero-meta span { opacity: 0.7; }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: 3rem 0;
+  }
+
+  /* SECTION */
+  .section {
+    padding: 2rem 0;
+  }
+  .section-number {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .section h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    font-weight: 400;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+  }
+  .section h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 2rem 0 0.75rem;
+    color: var(--text);
+  }
+  .section p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    max-width: 720px;
+  }
+  .section p strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* CALLOUT BOX */
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    margin: 1.5rem 0 2rem;
+    position: relative;
+  }
+  .callout::before {
+    content: '⚡';
+    position: absolute;
+    top: 1.25rem;
+    right: 1.5rem;
+    font-size: 1.5rem;
+    opacity: 0.3;
+  }
+  .callout-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .callout p {
+    color: var(--text-muted);
+    margin-bottom: 0;
+    font-size: 1.02rem;
+  }
+  .callout p em {
+    color: var(--text);
+    font-style: italic;
+  }
+
+  /* SECURITY CALLOUT */
+  .callout-security {
+    border-color: var(--red);
+    border-left: 3px solid var(--red);
+    background: var(--red-dim);
+  }
+  .callout-security .callout-label { color: var(--red); }
+  .callout-security::before { content: '🔒'; }
+
+  /* COMPARISON TABLE */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0 2rem;
+    font-size: 0.88rem;
+  }
+  .comparison-table th {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .comparison-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(39,39,42,0.5);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  .comparison-table td:first-child {
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+  .comparison-table tr:hover td {
+    background: rgba(249,115,22,0.03);
+  }
+
+  /* PIPELINE STEPS */
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 2rem 0;
+  }
+  .pipeline-step {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 1.25rem;
+    position: relative;
+  }
+  .pipeline-step + .pipeline-step { margin-top: 0.25rem; }
+  .pipeline-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 1.5px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .pipeline-step:not(:last-child) .pipeline-num::after {
+    content: '';
+    position: absolute;
+    top: 36px; left: 50%;
+    transform: translateX(-50%);
+    width: 1.5px;
+    height: calc(100% + 12px);
+    background: var(--border);
+  }
+  .pipeline-content {
+    padding-bottom: 1.75rem;
+  }
+  .pipeline-content h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.35rem;
+  }
+  .pipeline-content p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1.5rem 0 2rem;
+  }
+  .code-header {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    padding: 0.6rem 1.25rem;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.05em;
+  }
+  .code-block pre {
+    padding: 1.25rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+  }
+  .code-block pre .comment { color: var(--text-dim); }
+  .code-block pre .keyword { color: var(--accent); }
+  .code-block pre .string { color: var(--green); }
+  .code-block pre .dim { color: var(--text-dim); }
+
+  /* LAYER CARDS */
+  .layer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    margin: 1.25rem 0;
+    position: relative;
+  }
+  .layer-card::after {
+    content: attr(data-layer);
+    position: absolute;
+    top: 1.25rem; right: 1.5rem;
+    font-family: var(--mono);
+    font-size: 2rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.04);
+  }
+  .layer-tag {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+  .layer-tag.scan { background: var(--blue-dim); color: var(--blue); }
+  .layer-tag.gate { background: var(--green-dim); color: var(--green); }
+  .layer-tag.fix { background: var(--accent-dim); color: var(--accent); }
+  .layer-tag.gov { background: var(--purple-dim); color: var(--purple); }
+  .layer-card h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .layer-card p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* ANTI-PATTERN TABLE */
+  .anti-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0 2rem;
+    font-size: 0.85rem;
+  }
+  .anti-table th {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--border);
+  }
+  .anti-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgba(39,39,42,0.4);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  .anti-table td:first-child {
+    color: var(--red);
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+  .anti-table td:last-child {
+    color: var(--green);
+  }
+
+  /* METRICS GRID */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0 2rem;
+  }
+  @media (max-width: 600px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+  .metric-type {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .metric-type.leading { color: var(--blue); }
+  .metric-type.lagging { color: var(--green); }
+  .metric-type.safety { color: var(--red); }
+  .metric-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+  .metric-card p {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  /* FILE TREE */
+  .file-tree {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 1.75rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin: 1.5rem 0 2rem;
+    overflow-x: auto;
+  }
+  .file-tree .dir { color: var(--blue); }
+  .file-tree .file { color: var(--text-dim); }
+  .file-tree .note { color: var(--text-dim); font-style: italic; opacity: 0.6; }
+  .file-tree .readonly { color: var(--red); }
+
+  /* PHASE TIMELINE */
+  .phase {
+    border-left: 2px solid var(--border);
+    padding-left: 1.75rem;
+    margin: 1.5rem 0;
+    position: relative;
+  }
+  .phase::before {
+    content: '';
+    position: absolute;
+    left: -5px; top: 0;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .phase-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  .phase h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+  .phase ul {
+    list-style: none;
+    padding: 0;
+  }
+  .phase li {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    padding: 0.2rem 0;
+    padding-left: 1.25rem;
+    position: relative;
+  }
+  .phase li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--text-dim);
+  }
+
+  /* BOTTOM QUOTE */
+  .bottom-cta {
+    padding: 3rem 0 5rem;
+    text-align: center;
+  }
+  .bottom-cta p {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .bottom-cta p strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /* Inline code */
+  code {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    background: var(--surface-2);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">System Architecture Document</div>
+    <h1>Vibe Code → Production<br>via Autonomous Hardening Loops</h1>
+    <p class="hero-sub">
+      A system that takes working-but-fragile prototypes and autonomously hardens them into
+      production-grade software — fusing Karpathy's autoresearch pattern with Hamel Husain's
+      eval-driven methodology to close the gap between "it works on my machine" and "it runs at scale with SLAs."
+    </p>
+    <div class="hero-meta">
+      <span>Active Architecture v1.0 — March 2026</span>
+      <span>Target: Vibe-coded prototypes → Production deploys</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 01 CORE THESIS -->
+  <div class="section">
+    <div class="section-number">01 — Core Thesis</div>
+    <h2>The Vibe Code Gap Is an Eval Problem</h2>
+
+    <div class="callout">
+      <div class="callout-label">Architecture Insight</div>
+      <p>
+        Vibe coding gets you to <em>"it works"</em> fast. But <em>"it works"</em> and <em>"it's production-ready"</em>
+        are separated by hundreds of specific, discoverable defects — missing error handling, unvalidated inputs,
+        no observability, implicit security assumptions, zero test coverage. Each defect is binary: present or absent.
+        That makes this an eval problem. And eval problems have autonomous solutions.
+      </p>
+    </div>
+
+    <p>
+      The original Karpathy + Hamel system optimizes a <strong>single metric</strong> (model performance) via autonomous experimentation.
+      Reframed for production hardening, the system optimizes across <strong>multiple readiness dimensions</strong> simultaneously — each with
+      its own failure taxonomy, eval judges, and hard gates. The agent doesn't improve one number. It closes a checklist of hundreds of
+      specific production defects, autonomously, one commit at a time.
+    </p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>Original (Autoresearch)</th>
+          <th>Reframed (Vibe-to-Prod)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Loop unit</td>
+          <td>Hypothesis → train → metric</td>
+          <td>Defect scan → fix → eval gate → commit/revert</td>
+        </tr>
+        <tr>
+          <td>Target file</td>
+          <td>Single model/prompt file</td>
+          <td>Any file in the prototype repo</td>
+        </tr>
+        <tr>
+          <td>Primary metric</td>
+          <td>val_bpb (single scalar)</td>
+          <td>Production Readiness Score (composite)</td>
+        </tr>
+        <tr>
+          <td>Eval suite</td>
+          <td>Perf + failure-mode judges</td>
+          <td>Security + reliability + observability + type safety + test coverage judges</td>
+        </tr>
+        <tr>
+          <td>Hard gates</td>
+          <td>No regression on val metric</td>
+          <td>No broken tests + no new vulnerabilities + existing functionality preserved</td>
+        </tr>
+        <tr>
+          <td>Human role</td>
+          <td>Write program.md, review commits</td>
+          <td>Triage initial scan, set priority order, review hardening batches</td>
+        </tr>
+        <tr>
+          <td>Done condition</td>
+          <td>Metric plateau</td>
+          <td>All readiness dimensions pass threshold</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 02 SYSTEM ARCHITECTURE -->
+  <div class="section">
+    <div class="section-number">02 — System Architecture</div>
+    <h2>The Autonomous Hardening Loop</h2>
+
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="pipeline-num">01</div>
+        <div class="pipeline-content">
+          <h4>Defect Scan</h4>
+          <p>Static analysis + LLM review of the entire prototype codebase. Produces a typed defect taxonomy: unhandled errors, missing validation, hardcoded secrets, no retry logic, implicit type coercions, missing indices, no rate limiting. Hamel's "theoretical saturation" — keep scanning until no new defect categories emerge.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">02</div>
+        <div class="pipeline-content">
+          <h4>Eval Suite</h4>
+          <p><strong>L1:</strong> Deterministic assertions — tests pass, types check, linter clean, no secrets in source, schema validation. <strong>L2:</strong> LLM judges — "Does this error handler cover the failure mode?", "Is this input validated against the schema?", binary pass/fail per defect. <strong>L3:</strong> Integration smoke tests on significant changes.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">03</div>
+        <div class="pipeline-content">
+          <h4>program.md</h4>
+          <p>Karpathy-style instruction doc scoped to one hardening dimension at a time. Specifies: which files the agent may touch, what the defect is, what "fixed" looks like, which eval commands to run, and the time budget per fix attempt.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">04</div>
+        <div class="pipeline-content">
+          <h4>Agent Loop</h4>
+          <p>Agent reads program.md, picks the highest-priority unfixed defect, applies a fix to the scoped files, runs the full eval harness. Single-defect-per-commit discipline — atomic, reviewable, revertable.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">05</div>
+        <div class="pipeline-content">
+          <h4>Gate</h4>
+          <p>Pass ALL evals → <code>git commit</code>. Fail ANY → <code>git checkout</code> + log reason. Existing tests must not break (behavioral preservation). No exceptions — the agent cannot disable gates.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-num">06</div>
+        <div class="pipeline-content">
+          <h4>Feedback</h4>
+          <p>Failed fixes feed back into the defect taxonomy. Human reviews committed batches at morning standup cadence. Readiness score updates on every commit. Loop terminates when all dimensions pass production threshold.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 03 HARDENING DIMENSIONS -->
+  <div class="section">
+    <div class="section-number">03 — Hardening Dimensions</div>
+    <h2>What the Agent Actually Fixes</h2>
+
+    <p>Each dimension gets its own <code>program.md</code>, its own eval judges, and its own pass threshold. The agent works one dimension at a time — depth before breadth.</p>
+
+    <div class="layer-card" data-layer="01">
+      <span class="layer-tag scan">Scan → Fix</span>
+      <h4>Error Handling & Resilience</h4>
+      <p>Unhandled promise rejections, missing try/catch, no retry logic on network calls, swallowed errors, missing timeout configurations, no circuit breakers. <strong>L1 gate:</strong> zero uncaught exceptions in test suite. <strong>L2 judge:</strong> "Does every external call have explicit error handling with meaningful error types?"</p>
+    </div>
+
+    <div class="layer-card" data-layer="02">
+      <span class="layer-tag gate">Hard Gate</span>
+      <h4>Input Validation & Type Safety</h4>
+      <p>Unvalidated API inputs, <code>any</code> types, implicit coercions, missing Zod/Pydantic schemas on boundaries, SQL injection vectors, path traversal. <strong>L1 gate:</strong> <code>tsc --strict</code> passes with zero errors. <strong>L2 judge:</strong> "Is every external input validated before use with a runtime schema?"</p>
+    </div>
+
+    <div class="layer-card" data-layer="03">
+      <span class="layer-tag fix">Fix</span>
+      <h4>Observability & Debugging</h4>
+      <p>No structured logging, missing request IDs, no trace correlation, console.log as the observability strategy, no health endpoints, no metrics. <strong>L1 gate:</strong> every API endpoint emits structured log on entry and exit. <strong>L2 judge:</strong> "Can a production incident on this endpoint be debugged from logs alone?"</p>
+    </div>
+
+    <div class="layer-card" data-layer="04">
+      <span class="layer-tag gov">Governance</span>
+      <h4>Security Posture</h4>
+      <p>Hardcoded secrets, missing auth checks, overly permissive CORS, no rate limiting, unencrypted data at rest, missing CSP headers. <strong>L1 gate:</strong> zero secrets in source (<code>gitleaks</code>), dependency audit clean. <strong>L2 judge:</strong> "Does this endpoint enforce authentication and authorization before any data access?"</p>
+    </div>
+
+    <div class="layer-card" data-layer="05">
+      <span class="layer-tag scan">Scan → Fix</span>
+      <h4>Test Coverage & Behavioral Contracts</h4>
+      <p>Zero tests, untested edge cases, no integration tests, missing fixture data, flaky tests. <strong>L1 gate:</strong> coverage above threshold (start at 40%, ratchet up per sprint). <strong>L2 judge:</strong> "Does the test for this function cover the documented happy path, error path, and edge cases?"</p>
+    </div>
+
+    <div class="layer-card" data-layer="06">
+      <span class="layer-tag gate">Hard Gate</span>
+      <h4>Data Integrity & Persistence</h4>
+      <p>Missing migrations, no foreign key constraints, unindexed query patterns, no backup strategy, race conditions on concurrent writes. <strong>L1 gate:</strong> all migrations reversible, schema matches ORM models. <strong>L2 judge:</strong> "Does this write path handle concurrent access correctly?"</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 04 EVAL METHODOLOGY -->
+  <div class="section">
+    <div class="section-number">04 — Eval Methodology</div>
+    <h2>Hamel's Playbook, Applied to Code Quality</h2>
+
+    <p>
+      The core insight transfers directly: <strong>don't write evals for imagined defects — scan the actual codebase and write evals for defects you find.</strong> Vibe-coded projects have a finite (if large) defect surface. Scan it, categorize it, then build judges that catch each category.
+    </p>
+
+    <h3>Principle 1: Start with Defect Scan, Not Linting Rules</h3>
+    <p>Manually review the prototype's critical paths. Categorize every production risk you find — not what you imagine might break, but what you can see is broken or missing. Open-code until you hit saturation (no new defect types in the last 20 files reviewed).</p>
+
+    <h3>Principle 2: Binary Per Defect, Not Quality Scores</h3>
+    <p>"Is this endpoint rate-limited?" is a binary. "How good is the error handling?" is not. Decompose every fuzzy quality concern into specific binary assertions. Track "5 of 8 API endpoints have input validation" as 8 separate binary checks.</p>
+
+    <h3>Principle 3: Behavioral Preservation Is the Meta-Gate</h3>
+    <p>The hardest constraint in production hardening: <strong>don't break what already works.</strong> Before the agent touches anything, capture the prototype's existing behavior as a test suite — even if it's just snapshot tests of API responses. This becomes the regression gate that every subsequent fix must pass.</p>
+
+    <h3>Principle 4: The Domain Expert Is You</h3>
+    <p>For vibe-coded projects, the person who built it is the domain expert. They know which shortcuts they took, where the dragons are, what "works" means. Their manual defect triage in Phase 1 is the highest-leverage 2 hours in the entire process.</p>
+
+    <h3>Principle 5: Ratchet, Don't Threshold</h3>
+    <p>Start with whatever coverage/quality baseline the prototype has. Set the gate at "don't go below current." Every committed fix ratchets the baseline up. The system monotonically improves — it can never regress.</p>
+
+    <div class="callout callout-security">
+      <div class="callout-label">Security Constraint</div>
+      <p>
+        <strong>Non-negotiable gates for autonomous hardening.</strong> Every fix attempt must verify: no secrets introduced in source,
+        no new network calls without allowlist, existing auth checks not bypassed, no data exposure in error messages,
+        dependency additions scanned for known vulnerabilities. These are L1 hard gates — they block commits regardless
+        of how much the fix improves other dimensions. The agent cannot modify the eval harness. <code>run_evals.sh</code> is read-only.
+      </p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 05 CONCRETE PROGRAM.MD -->
+  <div class="section">
+    <div class="section-number">05 — Concrete Implementation</div>
+    <h2>program.md for a Vibe-Coded Project</h2>
+
+    <div class="code-block">
+      <div class="code-header">program.md — error handling hardening pass</div>
+<pre><span class="comment"># Vibe-to-Prod: Error Handling Hardening</span>
+
+<span class="keyword">## Target Scope</span>
+src/api/*.ts           <span class="comment">← agent may modify these files</span>
+src/services/*.ts      <span class="comment">← and these</span>
+
+<span class="keyword">## Fixed Budget</span>
+60 seconds per fix attempt (apply fix + run full eval suite)
+
+<span class="keyword">## Primary Metric</span>
+error_handling_coverage: count(endpoints_with_proper_error_handling)
+                       / count(total_endpoints)
+Must be > current baseline. Monotonic ratchet.
+
+<span class="keyword">## Hard Gates (L1)</span>
+<span class="dim">-</span> All existing tests pass          <span class="comment"># behavioral preservation</span>
+<span class="dim">-</span> tsc --strict: zero errors         <span class="comment"># type safety</span>
+<span class="dim">-</span> No secrets in diff (gitleaks)     <span class="comment"># security</span>
+<span class="dim">-</span> No new any types introduced       <span class="comment"># no shortcuts</span>
+<span class="dim">-</span> No console.log in production code <span class="comment"># observability hygiene</span>
+
+<span class="keyword">## Soft Gates (L2)</span>
+<span class="dim">-</span> LLM judge: "Does the error handler for this endpoint:"
+  <span class="dim">·</span> Catch specific error types (not bare catch)?
+  <span class="dim">·</span> Return appropriate HTTP status codes?
+  <span class="dim">·</span> Log structured error context?
+  <span class="dim">·</span> Not leak internal details to the caller?
+  Binary pass/fail per endpoint. Required: ≥ 85% pass rate.
+
+<span class="keyword">## Experiment Protocol</span>
+1. Read defect list (sorted by priority)
+2. Pick highest-priority unfixed defect
+3. Apply minimal fix (smallest diff that resolves the defect)
+4. Run: <span class="string">npm run eval:hardening</span>
+5. If ALL gates pass AND coverage improves → git commit -m "fix: [defect-id]"
+6. Else → git checkout -- src/ &amp;&amp; log failure reason</pre>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 06 FILE STRUCTURE -->
+  <div class="section">
+    <div class="section-number">06 — Reference Implementation</div>
+    <h2>File Structure</h2>
+
+    <div class="file-tree">
+<span class="dir">vibe-to-prod/</span>
+├── <span class="dir">programs/</span>                    <span class="note"># one per hardening dimension</span>
+│   ├── error-handling.md
+│   ├── input-validation.md
+│   ├── observability.md
+│   ├── security.md
+│   ├── test-coverage.md
+│   └── data-integrity.md
+├── <span class="dir">evals/</span>                       <span class="readonly"># READ-ONLY to agent</span>
+│   ├── harness.ts                <span class="note"># orchestrates all eval levels</span>
+│   ├── l1_assertions.ts          <span class="note"># deterministic: tests, types, lints, secrets</span>
+│   ├── l2_judges.ts              <span class="note"># LLM binary judges per defect type</span>
+│   ├── l2_judge_prompts/         <span class="note"># one prompt per defect category</span>
+│   ├── behavioral_snapshots.json <span class="note"># captured from prototype before hardening</span>
+│   ├── defect_taxonomy.json      <span class="note"># categorized defects from Phase 1 scan</span>
+│   └── security_gates.ts         <span class="note"># secrets, auth, dep audit</span>
+├── <span class="dir">logs/</span>                        <span class="note"># append-only audit trail</span>
+│   └── fixes.jsonl               <span class="note"># {defect_id, diff, results, δ_coverage}</span>
+├── <span class="dir">scripts/</span>
+│   ├── run_fix.sh                <span class="note"># agent calls this per fix attempt</span>
+│   ├── scan_defects.ts           <span class="note"># initial + periodic defect scanning</span>
+│   ├── capture_behavior.ts       <span class="note"># snapshot existing prototype behavior</span>
+│   └── readiness_score.ts        <span class="note"># composite score across all dimensions</span>
+├── <span class="dir">target/</span>                      <span class="note"># THE VIBE-CODED PROJECT (agent works here)</span>
+│   └── ...
+└── CLAUDE.md                    <span class="note"># agent boundary rules</span>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">run_fix.sh — core loop</div>
+<pre><span class="comment">#!/bin/bash</span>
+<span class="keyword">set</span> -euo pipefail
+
+<span class="comment"># 1. Snapshot current state</span>
+BASELINE=$(<span class="string">git rev-parse HEAD</span>)
+BASELINE_SCORE=$(<span class="string">npx tsx scripts/readiness_score.ts</span>)
+
+<span class="comment"># 2. Agent applies fix to target files (already done before this runs)</span>
+
+<span class="comment"># 3. Run ALL eval levels</span>
+EVAL=$(<span class="string">npx tsx evals/harness.ts</span>)
+
+<span class="comment"># 4. Parse gate results</span>
+L1_PASS=$(echo "$EVAL" | jq '.l1.passed')
+L2_PASS=$(echo "$EVAL" | jq '.l2.passed')
+BEHAVIOR_PRESERVED=$(echo "$EVAL" | jq '.behavioral.preserved')
+NEW_SCORE=$(echo "$EVAL" | jq '.readiness_score')
+
+<span class="comment"># 5. Composite gate: ALL must pass + score must not regress</span>
+<span class="keyword">if</span> [ "$L1_PASS" = "true" ] && [ "$L2_PASS" = "true" ] && \
+   [ "$BEHAVIOR_PRESERVED" = "true" ] && \
+   $(echo "$NEW_SCORE >= $BASELINE_SCORE" | bc -l); <span class="keyword">then</span>
+  git add target/
+  git commit -m <span class="string">"fix: readiness $BASELINE_SCORE → $NEW_SCORE"</span>
+  echo "{\"status\":\"committed\",\"delta\":\"$(echo "$NEW_SCORE - $BASELINE_SCORE" | bc)\"}"
+<span class="keyword">else</span>
+  git checkout -- target/
+  echo "$EVAL" | jq '{status:"reverted",eval:.}' >> logs/fixes.jsonl
+<span class="keyword">fi</span></pre>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 07 ANTI-PATTERNS -->
+  <div class="section">
+    <div class="section-number">07 — Anti-Patterns</div>
+    <h2>What Will Kill This System</h2>
+
+    <table class="anti-table">
+      <thead>
+        <tr>
+          <th>Anti-Pattern</th>
+          <th>Why It's Fatal</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Fix everything at once</td>
+          <td>Massive diffs are unreviewable, untestable, and impossible to revert cleanly</td>
+          <td>Single-defect-per-commit. Atomic fixes only.</td>
+        </tr>
+        <tr>
+          <td>No behavioral baseline</td>
+          <td>Agent "fixes" code by changing what it does — users see regressions</td>
+          <td>Capture behavior snapshots before hardening begins. Gate every commit against them.</td>
+        </tr>
+        <tr>
+          <td>Linter-driven hardening</td>
+          <td>Agent chases lint rules instead of real production risks. Busywork, not hardening.</td>
+          <td>Defect scan from real traces / manual review. Evals follow observed risks.</td>
+        </tr>
+        <tr>
+          <td>Agent modifies eval harness</td>
+          <td>Agent learns to game its own tests — marks defects as "fixed" by weakening the check</td>
+          <td>Eval harness is read-only. Separate repo. Hash verification on every run.</td>
+        </tr>
+        <tr>
+          <td>Skip human triage</td>
+          <td>Agent wastes cycles on low-value fixes. Priority order is wrong.</td>
+          <td>Human does Phase 1 defect scan and sets priority order. Agent executes.</td>
+        </tr>
+        <tr>
+          <td>Quality score instead of binary</td>
+          <td>Agent optimizes a fuzzy number instead of closing specific defects</td>
+          <td>Binary per defect. "Is rate limiting present on /api/create?" — yes or no.</td>
+        </tr>
+        <tr>
+          <td>No audit trail</td>
+          <td>Can't debug regressions, can't prove what was hardened, can't demo to stakeholders</td>
+          <td>Append-only log: defect ID, diff, all eval results, readiness score delta.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 08 SUCCESS METRICS -->
+  <div class="section">
+    <div class="section-number">08 — Success Metrics</div>
+    <h2>How You Know It's Working</h2>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-type leading">Leading</div>
+        <h4>Fixes/Night</h4>
+        <p>Target: 40+ fixes completing full eval pipeline per 8-hour overnight run. Below 20 = loop is too slow or fixes are too complex for atomic commits.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-type leading">Leading</div>
+        <h4>Commit Rate</h4>
+        <p>Target: 20-35% of fix attempts pass all gates. Below 10% = defects need better decomposition. Above 50% = gates are too loose.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-type lagging">Lagging</div>
+        <h4>Readiness Score Δ</h4>
+        <p>Monotonically improving composite readiness score across committed fixes. Plateau = switch to next hardening dimension.</p>
+      </div>
+      <div class="metric-card">
+        <div class="metric-type safety">Safety</div>
+        <h4>Behavioral Preservation</h4>
+        <p>Zero regression in behavioral snapshot tests across all committed fixes. Any behavioral change → automatic revert + human review.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 09 PHASES -->
+  <div class="section">
+    <div class="section-number">09 — Implementation Phases</div>
+    <h2>Rollout Plan</h2>
+
+    <div class="phase">
+      <div class="phase-label">Phase 1 — Day 1-2 · Scan + Baseline</div>
+      <h4>Defect Scan & Behavioral Capture</h4>
+      <ul>
+        <li>Capture behavioral snapshots of the prototype (API responses, UI states, critical paths)</li>
+        <li>Manual defect scan: review every file in the critical path</li>
+        <li>Open-code defects into taxonomy (target: fewer than 10 primary categories)</li>
+        <li>Write L1 assertions for each defect category (deterministic, fast)</li>
+        <li>Prioritize: security → data integrity → error handling → everything else</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Phase 2 — Day 3-4 · Eval Harness</div>
+      <h4>Build the Gate</h4>
+      <ul>
+        <li>Build eval harness: <code>run_evals.ts</code> returning structured JSON</li>
+        <li>Version-control eval harness separately from agent-mutable code</li>
+        <li>Write binary LLM judge prompts for top 5 defect categories</li>
+        <li>Validate judges against manually-reviewed examples (≥0.85 precision + recall)</li>
+        <li>Implement behavioral regression gate against Phase 1 snapshots</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Phase 3 — Day 5-7 · First Hardening Run</div>
+      <h4>Autonomous Hardening</h4>
+      <ul>
+        <li>Write <code>program.md</code> for highest-priority dimension</li>
+        <li>Configure agent with read-only eval harness, mutable target scope</li>
+        <li>First overnight run: target 40+ fix attempts</li>
+        <li>Morning review: inspect commit log, readiness trajectory, revert reasons</li>
+        <li>Tune <code>program.md</code> constraints based on what the agent tried</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Phase 4 — Week 2+ · Scale Across Dimensions</div>
+      <h4>Parallel Hardening & Governance</h4>
+      <ul>
+        <li>Parallel agents on different hardening dimensions (git worktrees per dimension)</li>
+        <li>Readiness dashboard: composite score across all dimensions</li>
+        <li>Judge agreement monitoring (alert on drift above 5%)</li>
+        <li>Ratchet thresholds up as baseline improves</li>
+        <li>Promotion pipeline: hardened dev → staging smoke test → production deploy</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- BOTTOM -->
+  <div class="bottom-cta">
+    <p>
+      The hardest part isn't the autonomous loop — that's just engineering. <strong>The hardest part is the first defect scan.</strong>
+      Sit with the code. Find what's actually broken. Everything else follows from knowing what "production-ready" means for <em>this specific project.</em>
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>

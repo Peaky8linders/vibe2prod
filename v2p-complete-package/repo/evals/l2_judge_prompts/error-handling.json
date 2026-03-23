@@ -1,0 +1,7 @@
+{
+  "id": "EH-001",
+  "dimension": "error-handling",
+  "question": "Does this file have proper error handling for all external calls (API requests, database queries, file system operations)?",
+  "pass_criteria": "Every external call (fetch, database query, fs operation) must be wrapped in try/catch with: (1) specific error types caught, not bare catch, (2) appropriate error logging with context, (3) meaningful error propagation or recovery, (4) no swallowed errors (empty catch blocks).",
+  "file_glob": "target/src/**/*.{ts,js}"
+}
