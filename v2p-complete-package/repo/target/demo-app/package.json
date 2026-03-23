@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
-    "test": "echo \"no tests yet\" && exit 0"
+    "test": "echo \"tests pending\" && exit 0"
   },
   "dependencies": {
     "cors": "^2.8.5",
