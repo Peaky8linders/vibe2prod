@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { SKIP_DIRS, parseGitignore, isGitignored, isCommentLine, hasLLMImport } from './scan-utils';
 
 export interface Finding {
   id: string;
@@ -34,6 +35,13 @@ interface InjectionPattern {
   auto_fixable: boolean;
   /** Optional second-pass regex the same line must also match (AND logic). */
   contextRegex?: RegExp;
+  /**
+   * When true, the pattern only fires for files that import an LLM library.
+   * Use for LLM01 patterns (prompt construction) to avoid false positives on
+   * files that happen to use words like "prompt" or "message" but have no LLM
+   * dependency.
+   */
+  requiresLLMImport?: boolean;
 }
 
 // LLM01 — Prompt Injection
@@ -55,6 +63,7 @@ const LLM01_PATTERNS: InjectionPattern[] = [
       '  ]',
     standard_refs: ['OWASP-LLM01', 'CWE-77', 'CWE-94'],
     auto_fixable: true,
+    requiresLLMImport: true,
   },
   {
     id: 'LLM01',
@@ -70,6 +79,7 @@ const LLM01_PATTERNS: InjectionPattern[] = [
       '  const prompt = promptTemplate.format({ user_query: sanitize(input) });',
     standard_refs: ['OWASP-LLM01', 'CWE-77'],
     auto_fixable: true,
+    requiresLLMImport: true,
   },
   {
     id: 'LLM01',
@@ -88,6 +98,7 @@ const LLM01_PATTERNS: InjectionPattern[] = [
       '  ]',
     standard_refs: ['OWASP-LLM01', 'CWE-77', 'CWE-94'],
     auto_fixable: true,
+    requiresLLMImport: true,
   },
   {
     id: 'LLM01',
@@ -102,6 +113,7 @@ const LLM01_PATTERNS: InjectionPattern[] = [
       'Use parameterized prompt templates with input validation and the messages API rather than string formatting.',
     standard_refs: ['OWASP-LLM01', 'CWE-77'],
     auto_fixable: true,
+    requiresLLMImport: true,
   },
   {
     id: 'LLM01',
@@ -447,12 +459,6 @@ const ALL_PATTERNS: InjectionPattern[] = [
 // File collection
 // ---------------------------------------------------------------------------
 
-const SKIP_DIRS = new Set([
-  'node_modules', '.git', '.next', 'dist', 'build', 'coverage',
-  '__pycache__', '.venv', 'venv', '.tox', '.mypy_cache',
-  'vendor', '.terraform', '.gradle',
-]);
-
 const SCAN_EXTENSIONS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.py',
 ]);
@@ -464,6 +470,7 @@ function shouldScanFile(filePath: string): boolean {
 
 function collectFiles(dir: string): string[] {
   const files: string[] = [];
+  const gitignorePatterns = parseGitignore(dir);
 
   function walk(currentDir: string): void {
     let entries: fs.Dirent[];
@@ -474,12 +481,17 @@ function collectFiles(dir: string): string[] {
     }
 
     for (const entry of entries) {
+      const fullPath = path.join(currentDir, entry.name);
+      const relativePath = path.relative(dir, fullPath);
+
       if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name)) {
-          walk(path.join(currentDir, entry.name));
+        if (!SKIP_DIRS.has(entry.name) && !isGitignored(relativePath, gitignorePatterns)) {
+          walk(fullPath);
         }
       } else if (entry.isFile() && shouldScanFile(entry.name)) {
-        files.push(path.join(currentDir, entry.name));
+        if (!isGitignored(relativePath, gitignorePatterns)) {
+          files.push(fullPath);
+        }
       }
     }
   }
@@ -577,6 +589,9 @@ export async function scan(targetDir: string): Promise<Finding[]> {
       continue;
     }
 
+    // File-level LLM import gate: only compute once per file
+    const fileHasLLM = hasLLMImport(content);
+
     const lines = content.split('\n');
 
     for (let i = 0; i < lines.length; i++) {
@@ -590,6 +605,11 @@ export async function scan(targetDir: string): Promise<Finding[]> {
       const contextBlock = lines.slice(contextStart, contextEnd + 1).join('\n');
 
       for (const pattern of ALL_PATTERNS) {
+        // Skip LLM01 prompt-construction patterns for files without LLM imports
+        if (pattern.requiresLLMImport && !fileHasLLM) {
+          continue;
+        }
+
         if (pattern.regex.test(line)) {
           // If the pattern has a contextRegex, the context window must also match
           if (pattern.contextRegex && !pattern.contextRegex.test(contextBlock)) {

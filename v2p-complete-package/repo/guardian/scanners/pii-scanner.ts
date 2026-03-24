@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { SKIP_DIRS, parseGitignore, isGitignored, isCommentLine } from './scan-utils';
 
 export interface Finding {
   id: string;
@@ -131,7 +132,7 @@ const PII_PATTERNS: PIIPattern[] = [
   // Credit card patterns
   {
     name: 'Credit card number handling',
-    regex: /(?:credit[_-]?card|card[_-]?number|cc[_-]?num|pan)\s*[:=]/i,
+    regex: /(?:credit[_-]?card|card[_-]?number|cc[_-]?num|\bpan\b)\s*[:=]/i,
     severity: 'P1',
     category: 'pii-handling',
     control_id: 'DATA-005',
@@ -152,19 +153,13 @@ const PII_PATTERNS: PIIPattern[] = [
   },
 ];
 
-const SKIP_DIRS = new Set([
-  'node_modules', '.git', '.next', 'dist', 'build', 'coverage',
-  '__pycache__', '.venv', 'venv', '.tox', '.mypy_cache',
-  'vendor', '.terraform', '.gradle',
-]);
-
 const CODE_EXTENSIONS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
   '.py', '.rb', '.go', '.java', '.rs', '.php',
   '.cs', '.kt', '.scala', '.swift',
 ]);
 
-function collectFiles(dir: string): string[] {
+function collectFiles(dir: string, gitignorePatterns: Set<string>): string[] {
   const files: string[] = [];
 
   function walk(currentDir: string): void {
@@ -176,14 +171,18 @@ function collectFiles(dir: string): string[] {
     }
 
     for (const entry of entries) {
+      const fullPath = path.join(currentDir, entry.name);
+      const relPath = path.relative(dir, fullPath);
+      if (isGitignored(relPath, gitignorePatterns)) continue;
+
       if (entry.isDirectory()) {
         if (!SKIP_DIRS.has(entry.name)) {
-          walk(path.join(currentDir, entry.name));
+          walk(fullPath);
         }
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name).toLowerCase();
         if (CODE_EXTENSIONS.has(ext)) {
-          files.push(path.join(currentDir, entry.name));
+          files.push(fullPath);
         }
       }
     }
@@ -206,12 +205,11 @@ function extractEvidence(line: string): string {
   return evidence;
 }
 
-let findingCounter = 0;
-
 export async function scan(targetDir: string): Promise<Finding[]> {
-  findingCounter = 0;
+  const counter = { value: 0 };
   const findings: Finding[] = [];
-  const files = collectFiles(targetDir);
+  const gitignorePatterns = parseGitignore(targetDir);
+  const files = collectFiles(targetDir, gitignorePatterns);
 
   for (const filePath of files) {
     let content: string;
@@ -229,19 +227,16 @@ export async function scan(targetDir: string): Promise<Finding[]> {
       const line = lines[i];
 
       // Skip comments
-      const trimmed = line.trim();
-      if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('*')) {
-        continue;
-      }
+      if (isCommentLine(line)) continue;
 
       for (const pattern of PII_PATTERNS) {
         if (pattern.regex.test(line)) {
           // Reduce severity for test files
           const severity = isTest ? 'P2' : pattern.severity;
 
-          findingCounter++;
+          counter.value++;
           findings.push({
-            id: `PII-${String(findingCounter).padStart(3, '0')}`,
+            id: `PII-${String(counter.value).padStart(3, '0')}`,
             domain: 3,
             control_id: pattern.control_id,
             severity,
