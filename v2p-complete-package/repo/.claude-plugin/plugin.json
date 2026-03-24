@@ -1,0 +1,18 @@
+{
+  "name": "v2p",
+  "version": "2.0.0",
+  "description": "Autonomous production hardening — transforms vibe-coded prototypes into production-grade software. Antifragile: your app gets stronger from every attack.",
+  "author": {
+    "name": "Peaky8linders",
+    "url": "https://github.com/Peaky8linders/vibe2prod"
+  },
+  "repository": "https://github.com/Peaky8linders/vibe2prod",
+  "license": "MIT",
+  "keywords": ["security", "hardening", "production", "antifragile", "evals", "vibe-coding"],
+  "mcpServers": {
+    "v2p": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/servers/v2p-server.js"]
+    }
+  }
+}

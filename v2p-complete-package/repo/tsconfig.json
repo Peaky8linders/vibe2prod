@@ -14,6 +14,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["evals/**/*.ts", "scripts/**/*.ts", "subtract/**/*.ts", "chaos/**/*.ts", "sentinel/**/*.ts", "scoring/**/*.ts", "judges/**/*.ts"],
+  "include": ["evals/**/*.ts", "scripts/**/*.ts", "subtract/**/*.ts", "chaos/**/*.ts", "sentinel/**/*.ts", "scoring/**/*.ts", "judges/**/*.ts", "servers/**/*.ts"],
   "exclude": ["node_modules", "dist", "target"]
 }
