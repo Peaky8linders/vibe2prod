@@ -3,5 +3,22 @@
   "dimension": "input-validation",
   "question": "Does this file validate all external inputs (API request bodies, query params, URL params, environment variables) using a runtime schema before processing?",
   "pass_criteria": "Every function that accepts external input must: (1) validate input shape with a runtime schema (Zod, Joi, Yup, or equivalent), (2) return typed validated output, (3) reject invalid input with a descriptive 400-level error, (4) not use `any` or type assertions to bypass validation.",
-  "file_glob": "target/src/**/*.{ts,js}"
+  "file_glob": "target/src/**/*.{ts,js}",
+  "examples": [
+    {
+      "input": "router.post('/tasks', requireAuth, async (req, res) => {\n  const parsed = createTaskSchema.safeParse(req.body);\n  if (!parsed.success) {\n    return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });\n  }\n  const { title, priority } = parsed.data;\n  // ... create task with validated data\n});",
+      "critique": "Input validated via Zod safeParse. Invalid input returns 400 with structured error details. Destructured data is typed from the schema. No type assertions or any casts. All four criteria satisfied.",
+      "outcome": "pass"
+    },
+    {
+      "input": "router.put('/tasks/:id', requireAuth, async (req, res) => {\n  const { title, status } = req.body as any;\n  await db.query('UPDATE tasks SET title = $1, status = $2 WHERE id = $3', [title, status, req.params.id]);\n  res.json({ success: true });\n});",
+      "critique": "req.body cast to any — bypasses type safety entirely. No runtime validation of title or status values. Malformed or missing fields would be passed directly to the database. No 400 error for invalid input. Fails criteria 1, 2, 3, and 4.",
+      "outcome": "fail"
+    },
+    {
+      "input": "router.get('/search', requireAuth, async (req, res) => {\n  const q = req.query.q;\n  if (typeof q !== 'string' || q.length === 0) {\n    return res.status(400).json({ error: 'Search query required' });\n  }\n  // ... search with q\n});",
+      "critique": "Manual typeof check provides basic validation but not a runtime schema. Validates presence and type but doesn't constrain length, format, or sanitize. Borderline — basic validation exists but doesn't meet the 'runtime schema' criterion. No Zod/Joi/Yup equivalent.",
+      "outcome": "fail"
+    }
+  ]
 }

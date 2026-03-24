@@ -3,5 +3,22 @@
   "dimension": "observability",
   "question": "Does this file use structured logging with request context for all significant operations (API handlers, service methods, error paths)?",
   "pass_criteria": "Significant operations must: (1) use a structured logger (not console.log), (2) include request ID or correlation ID in log context, (3) log on entry and exit/error for API handlers, (4) include relevant business context (user ID, resource ID) without PII.",
-  "file_glob": "target/src/**/*.{ts,js}"
+  "file_glob": "target/src/**/*.{ts,js}",
+  "examples": [
+    {
+      "input": "router.get('/tasks', requireAuth, async (req, res) => {\n  logger.info('Fetching tasks', { userId: req.user.userId, requestId: req.id });\n  const tasks = await taskService.getByUser(req.user.userId);\n  logger.info('Tasks fetched', { count: tasks.length, requestId: req.id });\n  res.json(tasks);\n});",
+      "critique": "Uses structured logger (not console.log). Request ID included in both log calls. Logs on entry ('Fetching tasks') and success ('Tasks fetched'). Business context (userId, count) included without PII. All four criteria met.",
+      "outcome": "pass"
+    },
+    {
+      "input": "router.post('/tasks', requireAuth, async (req, res) => {\n  console.log('Creating task:', req.body);\n  const task = await createTask(req.body);\n  console.log('Task created:', task.id);\n  res.status(201).json(task);\n});",
+      "critique": "Uses console.log instead of structured logger — not queryable, no log levels, no structured fields. Logs raw req.body which may contain PII. No request ID or correlation ID. Fails criteria 1, 2, and 4.",
+      "outcome": "fail"
+    },
+    {
+      "input": "async function processPayment(userId: string, amount: number) {\n  const result = await paymentGateway.charge(amount);\n  return result;\n}",
+      "critique": "No logging at all for a significant business operation (payment processing). No entry/exit logs, no error path logging, no context. A payment failure would be invisible in production. Fails all four criteria.",
+      "outcome": "fail"
+    }
+  ]
 }

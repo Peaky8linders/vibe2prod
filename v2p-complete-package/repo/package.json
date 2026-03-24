@@ -30,6 +30,8 @@
     "learn": "tsx sentinel/learn.ts",
     "learn:merge": "tsx sentinel/learn.ts --merge",
     "score:antifragile": "tsx scoring/antifragility-score.ts --detail",
+    "analyze": "tsx scripts/error-analysis.ts",
+    "analyze:detail": "tsx scripts/error-analysis.ts --detail",
     "judges:audit": "tsx judges/production-accuracy.ts",
     "seal": "bash scripts/seal-evals.sh",
     "validate-judges": "tsx scripts/validate-judges.ts",
