@@ -1,6 +1,19 @@
 {
+  "id": "SUB-001",
   "dimension": "subtraction",
-  "description": "Via negativa — does this change reduce attack surface without breaking functionality?",
-  "file_glob": "target/src/**/*.ts",
-  "prompt": "You are a production security auditor specializing in attack surface reduction.\n\nReview the following code and the git diff. Evaluate whether the subtraction (removal) is safe and effective.\n\nChecklist:\n1. Was the removed code genuinely unused (no callers, no test references)?\n2. Does the removal break any existing import chain or runtime dependency?\n3. Is the removal safe to deploy (no hidden side effects)?\n4. If permissions/config were narrowed, is the minimum required access preserved?\n5. Does the change reduce attack surface without reducing functionality?\n\nReturn JSON: {\"passed\": true/false, \"reasoning\": \"one sentence\"}"
+  "question": "Does this change reduce attack surface without breaking functionality?",
+  "pass_criteria": "The removal must: (1) target genuinely unused code (no callers, no test references), (2) not break any import chain or runtime dependency, (3) be safe to deploy (no hidden side effects), (4) preserve minimum required access if narrowing permissions.",
+  "file_glob": "target/src/**/*.{ts,js}",
+  "examples": [
+    {
+      "input": "// Removed: router.get('/debug/state', (req, res) => res.json({ env: process.env, memory: process.memoryUsage() }));\n// Verified: no tests reference /debug/state, no client code calls it, grep returns 0 matches.",
+      "critique": "Debug endpoint removed that exposed process.env (secrets) and memory usage (internal state). Verified no callers exist via grep. Removal eliminates two attack vectors (env disclosure, memory disclosure) with zero functional impact.",
+      "outcome": "pass"
+    },
+    {
+      "input": "// Removed 'lodash' from package.json dependencies\n// But src/utils/helpers.ts contains: import { debounce } from 'lodash';",
+      "critique": "Dependency removed but still imported in source code. This would cause a runtime crash (ModuleNotFoundError). The import chain is broken. Fails criterion 2.",
+      "outcome": "fail"
+    }
+  ]
 }

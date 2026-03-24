@@ -145,6 +145,10 @@ switch (command) {
     tsx("sentinel/learn.ts", args.slice(1));
     break;
 
+  case "analyze":
+    tsx("scripts/error-analysis.ts", args.slice(1));
+    break;
+
   case "judges:audit":
     tsx("judges/production-accuracy.ts", args.slice(1));
     break;
@@ -213,6 +217,7 @@ switch (command) {
     console.log(`  ${GREEN}subtract${NC} [--merge]     Via negativa — find attack surface to remove`);
     console.log(`  ${GREEN}chaos${NC} [--merge]        Run adversarial probes against hardened code`);
     console.log(`  ${GREEN}learn${NC} [--merge]        Process production signals into new defects`);
+    console.log(`  ${GREEN}analyze${NC} [--detail]      Error analysis of hardening loop failures`);
     console.log(`  ${GREEN}judges:audit${NC}           Judge accuracy vs production outcomes`);
     console.log(`  ${GREEN}badge${NC}                 Generate embeddable readiness badges`);
     console.log(`  ${GREEN}report${NC}                Generate HTML stakeholder report`);

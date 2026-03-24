@@ -3,5 +3,22 @@
   "dimension": "error-handling",
   "question": "Does this file have proper error handling for all external calls (API requests, database queries, file system operations)?",
   "pass_criteria": "Every external call (fetch, database query, fs operation) must be wrapped in try/catch with: (1) specific error types caught, not bare catch, (2) appropriate error logging with context, (3) meaningful error propagation or recovery, (4) no swallowed errors (empty catch blocks).",
-  "file_glob": "target/src/**/*.{ts,js}"
+  "file_glob": "target/src/**/*.{ts,js}",
+  "examples": [
+    {
+      "input": "async function getUser(id: string) {\n  try {\n    const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);\n    return result.rows[0] ?? null;\n  } catch (err) {\n    logger.error('Failed to fetch user', { userId: id, error: err.message });\n    throw new DatabaseError('User lookup failed', { cause: err });\n  }\n}",
+      "critique": "External call (db.query) wrapped in try/catch. Error is logged with context (userId, error message). Error is re-thrown as a typed DatabaseError with cause chain preserved. Not swallowed. All four criteria met.",
+      "outcome": "pass"
+    },
+    {
+      "input": "async function syncData() {\n  const response = await fetch('https://api.example.com/data');\n  const data = await response.json();\n  await db.query('INSERT INTO sync_log VALUES ($1)', [JSON.stringify(data)]);\n}",
+      "critique": "Two external calls (fetch and db.query) with no try/catch. If fetch fails (network error, timeout) or db.query fails (connection drop), the error propagates as an unhandled rejection. No logging, no recovery, no specific error handling.",
+      "outcome": "fail"
+    },
+    {
+      "input": "try {\n  await sendWebhook(payload);\n} catch (e) {\n  // ignore webhook failures\n}",
+      "critique": "The external call is wrapped in try/catch, but the catch block is empty — the error is swallowed silently. No logging, no context, no recovery. Even if webhook failures are non-critical, they should be logged for observability. Fails criterion 2 and 4.",
+      "outcome": "fail"
+    }
+  ]
 }

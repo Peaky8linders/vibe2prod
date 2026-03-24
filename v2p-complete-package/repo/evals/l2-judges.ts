@@ -36,12 +36,19 @@ export interface L2Result {
   threshold: number;
 }
 
+interface JudgeExample {
+  input: string;
+  critique: string;
+  outcome: "pass" | "fail";
+}
+
 interface JudgePrompt {
   id: string;
   dimension: string;
   question: string;
   pass_criteria: string;
   file_glob: string;
+  examples?: JudgeExample[];
 }
 
 interface JudgeCallResult {
@@ -87,25 +94,38 @@ async function callJudge(
     return heuristicJudge(prompt, fileContent, filePath);
   }
 
+  // Critique-before-verdict: judge writes reasoning BEFORE declaring pass/fail
+  // This reduces anchoring bias (Hamel Husain's methodology)
   const systemPrompt = `You are a production readiness judge. You evaluate code against a specific criterion and return a binary pass/fail judgment.
 
+IMPORTANT: Write your critique FIRST, then declare the outcome. This prevents anchoring bias.
+
 You MUST respond with ONLY a JSON object in this exact format:
-{"passed": true/false, "reasoning": "one sentence explanation"}
+{"critique": "detailed reasoning about what you observed", "outcome": "pass" or "fail"}
 
 No other text. No markdown. No preamble.`;
+
+  // Build few-shot examples section if available
+  let examplesSection = "";
+  if (prompt.examples && prompt.examples.length > 0) {
+    examplesSection = "\n## Example Evaluations\n";
+    for (const ex of prompt.examples) {
+      examplesSection += `\n<example>\n<input>\n${ex.input}\n</input>\n<evaluation>\n{"critique": "${ex.critique.replace(/"/g, '\\"')}", "outcome": "${ex.outcome}"}\n</evaluation>\n</example>\n`;
+    }
+  }
 
   const userPrompt = `## Criterion
 ${prompt.question}
 
 ## Pass Criteria
 ${prompt.pass_criteria}
-
+${examplesSection}
 ## File: ${filePath}
 \`\`\`
 ${fileContent.slice(0, 8000)}
 \`\`\`
 
-Evaluate this file against the criterion. Return ONLY the JSON judgment.`;
+Write your critique of this file against the criterion, then declare pass or fail. Return ONLY the JSON.`;
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -133,12 +153,20 @@ Evaluate this file against the criterion. Return ONLY the JSON judgment.`;
       .join("");
 
     const cleaned = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(cleaned) as JudgeCallResult;
-
-    return {
-      passed: Boolean(parsed.passed),
-      reasoning: String(parsed.reasoning ?? "no reasoning"),
+    const parsed = JSON.parse(cleaned) as {
+      critique?: string;
+      outcome?: string;
+      passed?: boolean;
+      reasoning?: string;
     };
+
+    // Support both new (critique/outcome) and legacy (passed/reasoning) formats
+    const passed = parsed.outcome !== undefined
+      ? parsed.outcome === "pass"
+      : Boolean(parsed.passed);
+    const reasoning = parsed.critique ?? parsed.reasoning ?? "no reasoning";
+
+    return { passed, reasoning: String(reasoning) };
   } catch (err) {
     console.warn(`[l2-judges] LLM call failed for ${prompt.id}, falling back to heuristic:`, err);
     return heuristicJudge(prompt, fileContent, filePath);
