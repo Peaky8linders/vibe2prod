@@ -91,6 +91,10 @@ switch (command) {
     tsx("scripts/scan-defects.ts", args.slice(1));
     break;
 
+  case "scan:e2e":
+    tsx("scripts/scan-e2e.ts", args.slice(1));
+    break;
+
   case "eval":
     tsx("evals/harness.ts", args.slice(1));
     break;
@@ -210,6 +214,7 @@ switch (command) {
     console.log(`  ${GREEN}harden${NC} [path]         Zero-config magic wand — scan, fix, report, badge`);
     console.log(`  ${GREEN}init${NC} <path>           Copy project, capture baseline, scan defects`);
     console.log(`  ${GREEN}scan${NC} [--llm]          Run defect scanner`);
+    console.log(`  ${GREEN}scan:e2e${NC} [--report]   File-by-file scan with actionable fix prompts`);
     console.log(`  ${GREEN}eval${NC}                  Run full eval harness`);
     console.log(`  ${GREEN}score${NC} [--detail]      Show readiness score (--antifragile for 3-component)`);
     console.log(`  ${GREEN}fix${NC}                   Run single fix attempt`);

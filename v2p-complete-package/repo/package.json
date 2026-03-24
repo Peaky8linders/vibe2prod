@@ -13,6 +13,8 @@
     "v2p": "tsx cli.ts",
     "scan": "tsx scripts/scan-defects.ts",
     "scan:llm": "tsx scripts/scan-defects.ts --llm",
+    "scan:e2e": "tsx scripts/scan-e2e.ts --report",
+    "scan:e2e:prompts": "tsx scripts/scan-e2e.ts --report --prompts",
     "capture": "tsx scripts/capture-behavior.ts",
     "eval": "tsx evals/harness.ts",
     "eval:l1": "tsx evals/l1-assertions.ts",
