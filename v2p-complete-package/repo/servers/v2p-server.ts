@@ -244,6 +244,43 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
+// Tool: v2p_scan_e2e — End-to-end file-by-file scan with actionable prompts
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "v2p_scan_e2e",
+  "End-to-end file-by-file scan with per-file readiness scores, actionable fix prompts, and remediation plan.",
+  {
+    path: z.string().optional().describe("Path to project to scan (default: target/)"),
+    prompts: z.boolean().optional().describe("Generate individual fix prompt files per dimension"),
+  },
+  async ({ path, prompts }) => {
+    const args = ["--report"];
+    if (path) args.push("--path", path);
+    if (prompts) args.push("--prompts");
+    return formatResult(runTsx("scripts/scan-e2e.ts", args));
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Tool: v2p_harden_post_migration — Post-migration hardening with trust score
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "v2p_harden_post_migration",
+  "Run post-migration hardening scan against a MigrationForge project. Computes enhanced trust score (A-F).",
+  {
+    path: z.string().describe("Path to the MigrationForge project"),
+    module: z.string().optional().describe("Scan a specific module only"),
+  },
+  async ({ path, module }) => {
+    const args = ["--path", path];
+    if (module) args.push("--module", module);
+    return formatResult(runTsx("integrations/migrationforge.ts", args));
+  },
+);
+
+// ---------------------------------------------------------------------------
 // Tool: v2p_analyze — Error analysis of hardening loop
 // ---------------------------------------------------------------------------
 
