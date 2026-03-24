@@ -309,12 +309,13 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
 
 function scanPythonFile(_filePath: string, _content: string, lines: string[]): FileDefect[] {
   const defects: FileDefect[] = [];
+  const isPyTestFile = /test_|_test\.py|tests[/\\]|conftest\.py/.test(_filePath);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     const lineNum = i + 1;
 
-    // Bare except
+    // Bare except (flag even in tests — bad practice everywhere)
     if (/^\s*except\s*:/.test(line)) {
       defects.push({
         id: nextId("EH"), dimension: "error-handling", priority: "P1", line: lineNum,
@@ -323,18 +324,23 @@ function scanPythonFile(_filePath: string, _content: string, lines: string[]): F
       });
     }
 
-    // f-string in SQL
-    if (/f['"].*(?:SELECT|INSERT|UPDATE|DELETE|WHERE)/i.test(line)) {
-      defects.push({
-        id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
-        description: "SQL injection via f-string interpolation",
-        fix_hint: "Use parameterized query: cursor.execute('SELECT * FROM t WHERE id = %s', (id,))",
-      });
+    // f-string in SQL — skip in test files (test fixtures contain SQL examples)
+    if (!isPyTestFile && /f['"].*(?:SELECT|INSERT|UPDATE|DELETE|WHERE)/i.test(line)) {
+      // Extra precision: require db/cursor/execute context
+      const context = lines.slice(Math.max(0, i - 3), i + 3).join(" ");
+      if (/cursor|execute|query|db\.|session\.|connection/.test(context)) {
+        defects.push({
+          id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
+          description: "SQL injection via f-string interpolation",
+          fix_hint: "Use parameterized query: cursor.execute('SELECT * FROM t WHERE id = %s', (id,))",
+        });
+      }
     }
 
-    // Hardcoded secrets
-    if (/(?:SECRET|PASSWORD|API_KEY|TOKEN)\s*=\s*['"][^'"]+['"]/i.test(line) &&
-        !/os\.environ|getenv|settings\./.test(line)) {
+    // Hardcoded secrets — skip in test files (test fixtures contain dummy secrets)
+    if (!isPyTestFile &&
+        /(?:SECRET|PASSWORD|API_KEY|TOKEN)\s*=\s*['"][^'"]+['"]/i.test(line) &&
+        !/os\.environ|getenv|settings\.|config\.|environ\.get/.test(line)) {
       defects.push({
         id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
         description: "Hardcoded secret in Python source",
@@ -342,8 +348,8 @@ function scanPythonFile(_filePath: string, _content: string, lines: string[]): F
       });
     }
 
-    // No type hints on function
-    if (/^\s*def\s+\w+\(/.test(line) && !/->/.test(line) && !/test_|__/.test(line)) {
+    // No type hints on function — only flag in production code, not tests/conftest
+    if (!isPyTestFile && /^\s*def\s+\w+\(/.test(line) && !/->/.test(line) && !/test_|__/.test(line)) {
       defects.push({
         id: nextId("IV"), dimension: "input-validation", priority: "P3", line: lineNum,
         description: "Function missing return type hint",
@@ -638,13 +644,43 @@ async function main(): Promise<void> {
 
   console.log(`\x1b[36m[v2p-scan]\x1b[0m Scanning ${targetPath} file by file...\n`);
 
-  // Discover files
-  const tsFiles = await glob(`${targetPath}/**/*.{ts,tsx,js,jsx}`, {
+  // Discover source files, then filter out third-party and generated code
+  // Note: glob ignore patterns can fail on Windows backslash paths, so we post-filter
+  const tsFilesRaw = await glob(`${targetPath}/**/*.{ts,tsx,js,jsx}`, {
     ignore: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**"],
   });
-  const pyFiles = await glob(`${targetPath}/**/*.py`, {
+  const pyFilesRaw = await glob(`${targetPath}/**/*.py`, {
     ignore: ["**/node_modules/**", "**/venv/**", "**/.git/**", "**/__pycache__/**"],
   });
+
+  // Post-filter: exclude third-party, generated, and vendored code
+  const excludePatterns = [
+    /[/\\]node_modules[/\\]/,
+    /[/\\]dist[/\\]/,
+    /[/\\]build[/\\]/,
+    /[/\\]\.git[/\\]/,
+    /[/\\]venv[/\\]/,
+    /[/\\]\.venv[/\\]/,
+    /[/\\]__pycache__[/\\]/,
+    /[/\\]vendor[/\\]/,
+    /[/\\]\.next[/\\]/,
+    /[/\\]\.nuxt[/\\]/,
+    /[/\\]coverage[/\\]/,
+    /[/\\]\.cache[/\\]/,
+    /[/\\]site-packages[/\\]/,
+    /[/\\]\.eggs[/\\]/,
+    /\.egg-info[/\\]/,
+    /\.min\.js$/,
+    /\.bundle\.js$/,
+    /\.generated\./,
+  ];
+
+  function isExcluded(filePath: string): boolean {
+    return excludePatterns.some((p) => p.test(filePath));
+  }
+
+  const tsFiles = tsFilesRaw.filter((f) => !isExcluded(f));
+  const pyFiles = pyFilesRaw.filter((f) => !isExcluded(f));
   const allFiles = [...tsFiles, ...pyFiles];
 
   if (allFiles.length === 0) {
