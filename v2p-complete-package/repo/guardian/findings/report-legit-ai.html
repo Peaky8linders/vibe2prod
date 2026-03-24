@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Compliance Guardian — Security Audit Report</title>
+<style>
+  /* ── Base ────────────────────────────────────────── */
+  :root {
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-600: #475569;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+    --red: #dc2626;
+    --orange: #ea580c;
+    --yellow: #ca8a04;
+    --green: #16a34a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--gray-800);
+    background: #fff;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 40px 32px; }
+
+  h1, h2, h3 { color: var(--gray-900); }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  h2 {
+    font-size: 20px;
+    color: var(--blue);
+    border-bottom: 2px solid var(--blue);
+    padding-bottom: 6px;
+    margin: 32px 0 16px;
+  }
+  h3 { font-size: 15px; margin: 16px 0 8px; }
+
+  /* ── Cover / Header ─────────────────────────────── */
+  .report-header {
+    text-align: center;
+    padding: 48px 0 32px;
+    border-bottom: 3px solid var(--blue);
+    margin-bottom: 32px;
+  }
+  .report-header .brand {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--blue);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .report-header h1 { font-size: 32px; color: var(--gray-900); }
+  .report-header .subtitle { color: var(--gray-600); font-size: 14px; margin-top: 4px; }
+  .report-header .meta { color: var(--gray-600); font-size: 12px; margin-top: 16px; }
+
+  .score-gauge { display: block; margin: 24px auto 0; }
+
+  /* ── Executive Summary ──────────────────────────── */
+  .exec-summary {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 8px;
+  }
+  .exec-summary p { margin-bottom: 8px; }
+
+  .severity-counts {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+  }
+  .severity-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .severity-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── Tables ─────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 24px;
+    font-size: 12.5px;
+  }
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  th {
+    background: var(--gray-100);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-600);
+  }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ── Progress Bars ──────────────────────────────── */
+  .bar-track {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 80px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  /* ── Findings ───────────────────────────────────── */
+  .finding-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 8px 0;
+    page-break-inside: avoid;
+  }
+  .finding-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .finding-id {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--gray-600);
+    font-weight: 600;
+  }
+  .finding-title { font-weight: 600; font-size: 13px; }
+  .finding-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+  }
+  .finding-category {
+    background: var(--gray-100);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .ref-badge {
+    background: var(--blue-light);
+    color: var(--blue);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .finding-evidence {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    overflow-x: auto;
+  }
+  .finding-evidence code {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11.5px;
+    color: var(--gray-800);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .finding-remediation {
+    font-size: 12px;
+    color: var(--gray-600);
+  }
+
+  .severity-badge {
+    display: inline-block;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .severity-group { margin-bottom: 24px; }
+  .severity-group h3 { margin-top: 20px; }
+
+  /* ── Roadmap ────────────────────────────────────── */
+  .roadmap-week {
+    margin-bottom: 20px;
+    page-break-inside: avoid;
+  }
+  .roadmap-week ul {
+    list-style: disc;
+    padding-left: 24px;
+    font-size: 12px;
+  }
+  .roadmap-week li { margin-bottom: 4px; }
+
+  /* ── Footer ─────────────────────────────────────── */
+  .report-footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 2px solid var(--gray-200);
+    text-align: center;
+    font-size: 11px;
+    color: var(--gray-600);
+  }
+  .report-footer .disclaimer {
+    margin-top: 12px;
+    font-style: italic;
+    font-size: 10px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ── Print CSS ──────────────────────────────────── */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 15mm 25mm 15mm;
+    }
+
+    body { font-size: 11px; }
+    .page { padding: 0; max-width: none; }
+
+    .report-header { padding-top: 24px; }
+
+    h2 { page-break-after: avoid; }
+    .finding-card { page-break-inside: avoid; }
+    .roadmap-week { page-break-inside: avoid; }
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; }
+
+    /* Section page breaks */
+    .section-break { page-break-before: always; }
+
+    /* Running header via CSS */
+    @top-center {
+      content: "AI Compliance Guardian — Security Audit Report";
+      font-size: 8px;
+      color: #94a3b8;
+    }
+
+    /* Ensure backgrounds print */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ─── Cover / Header ─────────────────────────── -->
+  <div class="report-header">
+    <div class="brand">AI Compliance Guardian</div>
+    <h1>Security Audit Report</h1>
+    <div class="subtitle">Automated Compliance Assessment</div>
+    <div class="meta">
+      <div>Generated: March 24, 2026 at 11:01 AM</div>
+      <div>Target: legit-ai (AI Compliance Product)</div>
+    </div>
+    
+    <svg width="200" height="200" viewBox="0 0 200 200" class="score-gauge">
+      <circle cx="100" cy="100" r="70" fill="none" stroke="#e5e7eb" stroke-width="14"/>
+      <circle cx="100" cy="100" r="70" fill="none" stroke="#ea580c" stroke-width="14"
+        stroke-dasharray="439.822971502571" stroke-dashoffset="219.9114857512855"
+        stroke-linecap="round" transform="rotate(-90 100 100)"/>
+      <text x="100" y="90" text-anchor="middle" font-size="36" font-weight="700" fill="#1e293b">50%</text>
+      <text x="100" y="120" text-anchor="middle" font-size="24" font-weight="600" fill="#ea580c">Grade F</text>
+    </svg>
+  </div>
+
+  <!-- ─── Executive Summary ──────────────────────── -->
+  <h2>Executive Summary</h2>
+  <div class="exec-summary">
+    <p>This automated compliance audit identified 234 open findings across the target codebase. The overall compliance score is 50% (Grade F). There are 18 critical (P0) findings requiring immediate attention. The most critical issue is hardcoded database connection url (SEC-001) in .env.example.</p>
+    <div class="severity-counts">
+      <div class="severity-count"><span class="severity-dot" style="background:var(--red)"></span> P0 Critical: 18</div>
+      <div class="severity-count"><span class="severity-dot" style="background:var(--orange)"></span> P1 High: 175</div>
+      <div class="severity-count"><span class="severity-dot" style="background:var(--yellow)"></span> P2 Medium: 41</div>
+      <div class="severity-count"><span class="severity-dot" style="background:var(--blue)"></span> P3 Low: 0</div>
+    </div>
+    <p><strong>Standards Covered:</strong> ISO 42001, NIST AI RMF, OWASP LLM, GDPR, SOC 2</p>
+  </div>
+
+  <!-- ─── Domain Compliance Scores ───────────────── -->
+  <div class="section-break"></div>
+  <h2>Domain Compliance Scores</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Domain</th>
+        <th class="num">Score</th>
+        <th class="num">Weight</th>
+        <th>Progress</th>
+        <th style="text-align:center">Status</th>
+        <th class="num">Findings</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>D01</td>
+        <td>AI Governance &amp; Accountability</td>
+        <td class="num">100%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D02</td>
+        <td>Risk Management &amp; Oversight</td>
+        <td class="num">0%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">155</td>
+      </tr>
+      <tr>
+        <td>D03</td>
+        <td>Model Lifecycle Security</td>
+        <td class="num">0%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">40</td>
+      </tr>
+      <tr>
+        <td>D04</td>
+        <td>Training &amp; Inference Data Security</td>
+        <td class="num">100%</td>
+        <td class="num">2.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D05</td>
+        <td>Model Integrity &amp; Adversarial Resistance</td>
+        <td class="num">0%</td>
+        <td class="num">1.5</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">15</td>
+      </tr>
+      <tr>
+        <td>D06</td>
+        <td>Access Control &amp; Identity Management</td>
+        <td class="num">100%</td>
+        <td class="num">1.8</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D07</td>
+        <td>Infrastructure &amp; MLOps Security</td>
+        <td class="num">100%</td>
+        <td class="num">1.5</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D08</td>
+        <td>Monitoring, Logging &amp; Incident Response</td>
+        <td class="num">28%</td>
+        <td class="num">1.2</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:28%;background:#dc2626"></div></div>
+        </td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">&#10007;</td>
+        <td class="num">24</td>
+      </tr>
+      <tr>
+        <td>D09</td>
+        <td>Third Party &amp; Supply Chain Risk</td>
+        <td class="num">100%</td>
+        <td class="num">1.3</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+      <tr>
+        <td>D10</td>
+        <td>Regulatory Compliance &amp; Ethics</td>
+        <td class="num">100%</td>
+        <td class="num">1.0</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div>
+        </td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">&#10003;</td>
+        <td class="num">0</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ─── Top Findings ───────────────────────────── -->
+  <div class="section-break"></div>
+  <h2>Top Findings</h2>
+  <p style="color:var(--gray-600);font-size:12px;margin-bottom:12px;">
+    Showing top 30 of 234 open findings, sorted by severity.
+  </p>
+  <div class="severity-group"><h3>Critical Severity</h3>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-001</span>
+          <span class="finding-title">Hardcoded Database Connection URL</span>
+        </div>
+        <div class="finding-meta">
+          <span>.env.example:16</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code># DATABASE_URL=postgresql://user:password@host:5432/dbname</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables for database URLs. Never embed credentials in connection strings in code.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-002</span>
+          <span class="finding-title">Hardcoded Database Connection URL</span>
+        </div>
+        <div class="finding-meta">
+          <span>alembic_pg.ini:14</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>sqlalchemy.url = postgresql://user:pass@localhost:5432/p2p_compliance</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables for database URLs. Never embed credentials in connection strings in code.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-003</span>
+          <span class="finding-title">Hardcoded Generic Secret Assignment</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\recharts.js:3489</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>var ReactPropTypesSecret = &quot;SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED&quot;;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables or a secrets vault. Rotate the exposed credential immediately.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-004</span>
+          <span class="finding-title">Hardcoded Database Connection URL</span>
+        </div>
+        <div class="finding-meta">
+          <span>tests\test_all.py:5957</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>assert _make_async_dsn(&quot;postgresql://user:pass@host/db&quot;) == &quot;postgresql+asyncpg://user:pass@host/db&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables for database URLs. Never embed credentials in connection strings in code.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">SEC-005</span>
+          <span class="finding-title">Hardcoded Database Connection URL</span>
+        </div>
+        <div class="finding-meta">
+          <span>tests\test_all.py:5958</span>
+          <span class="finding-category">secret-exposure</span>
+          <span class="ref-badge">CWE-798</span><span class="ref-badge">CWE-259</span><span class="ref-badge">OWASP-A07:2021</span>
+        </div>
+        <div class="finding-evidence"><code>assert _make_async_dsn(&quot;postgres://user:pass@host/db&quot;) == &quot;postgresql+asyncpg://user:pass@host/db&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use environment variables for database URLs. Never embed credentials in connection strings in code.</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-002</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>app\engines\annex_iv.py:358</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>s5.content = f&quot;**Risk Management Documentation**{fria_summary}&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-003</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>app\engines\annex_iv.py:367</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>s1b.content = f&quot;**Intended Purpose:** {fria.system_purpose}&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-004</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>app\evidence\store.py:322</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>message=f&quot;Chain broken at entry {verified}: previous_hash mismatch&quot;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-005</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>app\evidence\store.py:334</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>message=f&quot;Hash mismatch at entry {verified}: data has been modified&quot;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-006</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>compliance_modules\art11_technical_docs\__init__.py:171</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>self.set_section(&quot;2d&quot;, content=f&quot;Training parameters:\n{training_info}&quot;)</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-007</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>compliance_modules\art11_technical_docs\__init__.py:177</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>self.set_section(&quot;3&quot;, content=f&quot;Model metrics:\n{metrics_info}&quot;)</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-008</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>compliance_modules\art11_technical_docs\__init__.py:184</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>self.set_section(&quot;4&quot;, content=f&quot;Accuracy metrics:\n{acc_info}&quot;)</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-009</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>compliance_modules\art12_record_keeping\__init__.py:292</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>message=f&quot;Chain broken at entry {i}: expected previous_hash &quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-010</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>compliance_modules\art12_record_keeping\__init__.py:304</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>message=f&quot;Hash mismatch at entry {i}: entry has been modified&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-011</span>
+          <span class="finding-title">String concatenation in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\chunk-JMVEG3FK.js:1592</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span>
+        </div>
+        <div class="finding-evidence"><code>return &quot;\nError generating stack: &quot; + x.message + &quot;\n&quot; + x.stack;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never concatenate user input into prompt strings. Use parameterized prompt templates with explicit input boundaries:
+  const prompt = promptTemplate.format({ user_query: sanitize(input) });</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-013</span>
+          <span class="finding-title">String concatenation in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\recharts.js:3512</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span>
+        </div>
+        <div class="finding-evidence"><code>var message = &quot;Warning: &quot; + text;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never concatenate user input into prompt strings. Use parameterized prompt templates with explicit input boundaries:
+  const prompt = promptTemplate.format({ user_query: sanitize(input) });</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-014</span>
+          <span class="finding-title">String concatenation in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\recharts.js:3580</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span>
+        </div>
+        <div class="finding-evidence"><code>var message = &quot;Warning: &quot; + text;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never concatenate user input into prompt strings. Use parameterized prompt templates with explicit input boundaries:
+  const prompt = promptTemplate.format({ user_query: sanitize(input) });</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#dc2626">P0 CRITICAL</span>
+          <span class="finding-id">PINJ-015</span>
+          <span class="finding-title">Python f-string used in prompt construction</span>
+        </div>
+        <div class="finding-meta">
+          <span>tests\test_all.py:2439</span>
+          <span class="finding-category">prompt-injection</span>
+          <span class="ref-badge">OWASP-LLM01</span><span class="ref-badge">CWE-77</span><span class="ref-badge">CWE-94</span>
+        </div>
+        <div class="finding-evidence"><code>prompt=f&quot;Do task {i}&quot;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</div>
+      </div></div><div class="severity-group"><h3>High Severity</h3>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-001</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>app\main.py:69</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>lifespan=lifespan,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-004</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\chunk-JMVEG3FK.js:2454</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>gridRowSpan: true,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-005</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\chunk-JMVEG3FK.js:2458</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>gridColumnSpan: true,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-006</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\chunk-JMVEG3FK.js:2755</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>colspan: &quot;colSpan&quot;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-007</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\chunk-JMVEG3FK.js:2848</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>rowspan: &quot;rowSpan&quot;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-008</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\chunk-JMVEG3FK.js:2858</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>span: &quot;span&quot;,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-009</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\chunk-JMVEG3FK.js:3213</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>zoomandpan: &quot;zoomAndPan&quot;</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-016</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\react-markdown.js:1963</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>ariaColSpan: number,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-017</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\react-markdown.js:1996</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>ariaRowSpan: number,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-018</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\react-markdown.js:2055</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>colSpan: null,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-019</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\react-markdown.js:2228</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>rowSpan: number,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="severity-badge" style="background:#ea580c">P1 HIGH</span>
+          <span class="finding-id">PII-020</span>
+          <span class="finding-title">Credit card number handling</span>
+        </div>
+        <div class="finding-meta">
+          <span>frontend\.vite\deps\react-markdown.js:2241</span>
+          <span class="finding-category">pii-handling</span>
+          <span class="ref-badge">PCI-DSS-3.4</span><span class="ref-badge">CWE-311</span><span class="ref-badge">CWE-359</span>
+        </div>
+        <div class="finding-evidence"><code>span: number,</code></div>
+        <div class="finding-remediation"><strong>Remediation:</strong> Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</div>
+      </div></div>
+
+  <!-- ─── Compliance Framework Mapping ───────────── -->
+  <div class="section-break"></div>
+  <h2>Compliance Framework Mapping</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Framework</th>
+        <th class="num">Related Findings</th>
+        <th class="num">Failing Controls</th>
+        <th style="text-align:center">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>ISO 42001</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">PASS</td>
+      </tr>
+      <tr>
+        <td>NIST AI RMF</td>
+        <td class="num">0</td>
+        <td class="num">0</td>
+        <td style="color:#16a34a;font-weight:600;text-align:center">PASS</td>
+      </tr>
+      <tr>
+        <td>OWASP LLM</td>
+        <td class="num">234</td>
+        <td class="num">9</td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">FAIL</td>
+      </tr>
+      <tr>
+        <td>GDPR</td>
+        <td class="num">17</td>
+        <td class="num">2</td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">FAIL</td>
+      </tr>
+      <tr>
+        <td>SOC 2</td>
+        <td class="num">129</td>
+        <td class="num">1</td>
+        <td style="color:#dc2626;font-weight:600;text-align:center">FAIL</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ─── Remediation Roadmap ────────────────────── -->
+  <div class="section-break"></div>
+  <h2>Remediation Roadmap</h2>
+  
+      <div class="roadmap-week">
+        <h3>Week 1: Critical (P0)</h3>
+        <ul><li>[SEC-001] Use environment variables for database URLs. Never embed credentials in connection strings in code.</li><li>[SEC-002] Use environment variables for database URLs. Never embed credentials in connection strings in code.</li><li>[SEC-003] Use environment variables or a secrets vault. Rotate the exposed credential immediately.</li><li>[SEC-004] Use environment variables for database URLs. Never embed credentials in connection strings in code.</li><li>[SEC-005] Use environment variables for database URLs. Never embed credentials in connection strings in code.</li><li>[PINJ-002] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-003] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-004] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-005] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-006] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-007] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-008] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-009] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-010] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li><li>[PINJ-011] Never concatenate user input into prompt strings. Use parameterized prompt templates with explicit input boundaries:
+  const prompt = promptTemplate.format({ user_query: sanitize(input) });</li><li>[PINJ-013] Never concatenate user input into prompt strings. Use parameterized prompt templates with explicit input boundaries:
+  const prompt = promptTemplate.format({ user_query: sanitize(input) });</li><li>[PINJ-014] Never concatenate user input into prompt strings. Use parameterized prompt templates with explicit input boundaries:
+  const prompt = promptTemplate.format({ user_query: sanitize(input) });</li><li>[PINJ-015] Use the messages API with separate roles instead of string formatting:
+  messages=[
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: sanitize(user_input)}
+  ]</li></ul>
+      </div>
+      <div class="roadmap-week">
+        <h3>Week 2: High (P1)</h3>
+        <ul><li>[PII-001] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-004] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-005] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-006] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-007] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-008] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-009] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-016] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-017] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-018] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-019] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-020] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-021] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-022] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-023] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-026] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-030] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[PII-031] Never store raw card numbers. Use a PCI-compliant payment processor (Stripe, etc.).</li><li>[ACL-001] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-002] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-003] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-004] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-005] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-006] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-007] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-008] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-009] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-010] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-011] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-012] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-013] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-014] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-015] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-016] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-017] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-018] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-019] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-020] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-021] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-022] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-023] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-024] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-025] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-026] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-027] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-028] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-029] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-030] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-031] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-032] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-033] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-034] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-035] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-036] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-037] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-038] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-039] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-040] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-041] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-042] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-043] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-044] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-045] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-046] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-047] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-048] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-049] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-050] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-051] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-052] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-053] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-054] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-055] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-056] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-057] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-058] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-059] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-060] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-061] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-062] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-063] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-064] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-065] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-066] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-067] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-068] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-069] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-070] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-071] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-072] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-073] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-074] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-075] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-076] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-077] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-078] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-079] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-080] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-081] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-082] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-083] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-084] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-085] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-086] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-087] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-088] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-089] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-090] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-091] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-092] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-093] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-094] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-095] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-096] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-097] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-098] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-099] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-100] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-101] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-102] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-103] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-104] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-105] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-106] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-107] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-108] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-109] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-110] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-111] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-112] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-113] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-114] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-115] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-116] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-117] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-118] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-119] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-120] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-121] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-122] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-123] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-124] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-125] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-126] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-127] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-128] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-129] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-130] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-131] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-132] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-133] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-134] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-135] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-136] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-137] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-138] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-139] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-140] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-141] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-142] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-143] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[ACL-144] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-145] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-146] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-147] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-148] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-149] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-150] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-151] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-152] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-153] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-154] Add authentication middleware to protect this route. Example: router.get(&quot;/path&quot;, authMiddleware, handler)</li><li>[ACL-155] Add CSRF protection middleware (e.g., csurf). Use CSRF tokens in forms and AJAX requests.</li><li>[PINJ-001] Require human confirmation for all database write operations triggered by LLM:
+  async function dbWriteTool(params) {
+    const confirmed = await requireConfirmation(`Write ${params.operation} to ${params.table}?`);
+    if (!confirmed) return { error: &quot;User denied operation&quot; };
+    return db.execute(params);
+  }</li><li>[PINJ-012] Require human confirmation for all database write operations triggered by LLM:
+  async function dbWriteTool(params) {
+    const confirmed = await requireConfirmation(`Write ${params.operation} to ${params.table}?`);
+    if (!confirmed) return { error: &quot;User denied operation&quot; };
+    return db.execute(params);
+  }</li></ul>
+      </div>
+      <div class="roadmap-week">
+        <h3>Weeks 3–4: Medium &amp; Low (P2/P3)</h3>
+        <ul><li>[PII-002] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-003] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-010] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-011] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-012] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-013] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-014] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-015] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-024] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-025] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-027] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-028] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-029] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-032] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-033] Ensure SSN values are never stored in plaintext or returned in API responses.</li><li>[PII-034] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[PII-035] Select only required fields. Use DTOs to control response shape. Exclude sensitive fields.</li><li>[SCA-001] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-002] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-003] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-004] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-005] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-006] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-007] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-008] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-009] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-010] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-011] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-012] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-013] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-014] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-015] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-016] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-017] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-018] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-019] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-020] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-021] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-022] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-023] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li><li>[SCA-024] Pin to exact versions (package==1.2.3). Use pip-compile for reproducible builds.</li></ul>
+      </div>
+
+  <!-- ─── Footer ─────────────────────────────────── -->
+  <div class="report-footer">
+    <div>Generated by <strong>AI Compliance Guardian</strong></div>
+    <div>March 24, 2026 at 11:01 AM</div>
+    <div class="disclaimer">
+      This report is generated by automated scanning tools and should be reviewed by qualified
+      security professionals before making compliance decisions. Automated scanners may produce
+      false positives and cannot detect all vulnerability classes. This report does not constitute
+      legal advice or a formal compliance certification.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

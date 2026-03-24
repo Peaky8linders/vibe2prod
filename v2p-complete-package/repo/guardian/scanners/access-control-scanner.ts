@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { SKIP_DIRS, parseGitignore, isGitignored, detectFramework, hasFastAPIAuth, routeHasFastAPIAuth, usesJWTBearerAuth, isPythonJoseVerifiedDecode, projectUsesTokenAuth } from './scan-utils';
 
 export interface Finding {
   id: string;
@@ -17,12 +18,6 @@ export interface Finding {
   auto_fixable: boolean;
 }
 
-const SKIP_DIRS = new Set([
-  'node_modules', '.git', '.next', 'dist', 'build', 'coverage',
-  '__pycache__', '.venv', 'venv', '.tox', '.mypy_cache',
-  'vendor', '.terraform', '.gradle',
-]);
-
 const CODE_EXTENSIONS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
   '.py', '.rb', '.go', '.java', '.rs', '.php',
@@ -31,6 +26,7 @@ const CODE_EXTENSIONS = new Set([
 
 function collectFiles(dir: string): string[] {
   const files: string[] = [];
+  const gitignorePatterns = parseGitignore(dir);
 
   function walk(currentDir: string): void {
     let entries: fs.Dirent[];
@@ -43,12 +39,20 @@ function collectFiles(dir: string): string[] {
     for (const entry of entries) {
       if (entry.isDirectory()) {
         if (!SKIP_DIRS.has(entry.name)) {
-          walk(path.join(currentDir, entry.name));
+          const entryPath = path.join(currentDir, entry.name);
+          const relPath = path.relative(dir, entryPath);
+          if (!isGitignored(relPath, gitignorePatterns)) {
+            walk(entryPath);
+          }
         }
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name).toLowerCase();
         if (CODE_EXTENSIONS.has(ext)) {
-          files.push(path.join(currentDir, entry.name));
+          const entryPath = path.join(currentDir, entry.name);
+          const relPath = path.relative(dir, entryPath);
+          if (!isGitignored(relPath, gitignorePatterns)) {
+            files.push(entryPath);
+          }
         }
       }
     }
@@ -67,7 +71,15 @@ function extractEvidence(line: string): string {
   return evidence;
 }
 
-let findingCounter = 0;
+function makeCounter() {
+  let count = 0;
+  return {
+    next: () => ++count,
+    reset: () => { count = 0; },
+  };
+}
+
+const findingCounter = makeCounter();
 
 function addFinding(
   findings: Finding[],
@@ -85,9 +97,8 @@ function addFinding(
     auto_fixable?: boolean;
   },
 ): void {
-  findingCounter++;
   findings.push({
-    id: `ACL-${String(findingCounter).padStart(3, '0')}`,
+    id: `ACL-${String(findingCounter.next()).padStart(3, '0')}`,
     domain: 2,
     control_id: opts.control_id,
     severity: opts.severity,
@@ -106,33 +117,62 @@ function addFinding(
 // --- Check: Routes without auth middleware ---
 
 const ROUTE_PATTERN = /(?:router|app)\s*\.\s*(?:get|post|put|patch|delete|all)\s*\(\s*['"`]([^'"`]+)['"`]\s*,/;
+const PYTHON_ROUTE_PATTERN = /@(?:app|router)\.\s*(?:get|post|put|patch|delete|api_route)\s*\(\s*['"]([^'"]+)['"]/;
+
 const AUTH_MIDDLEWARE_NAMES = [
   'auth', 'authenticate', 'isAuthenticated', 'requireAuth', 'ensureAuth',
   'verifyToken', 'checkAuth', 'protect', 'isLoggedIn', 'requireLogin',
   'authMiddleware', 'authGuard', 'jwtAuth', 'passport.authenticate',
   'requireAuthentication', 'ensureAuthenticated',
+  // FastAPI auth dependency injection names
+  'Depends', 'Security', 'get_current_user', 'get_current_active_user',
+  'get_current_admin', 'HTTPBearer', 'OAuth2PasswordBearer',
 ];
 
 function checkRoutesWithoutAuth(
   lines: string[],
+  fileContent: string,
+  filePath: string,
   relativeFile: string,
   findings: Finding[],
 ): void {
   // Patterns that indicate public routes (don't need auth)
   const publicPatterns = /(?:\/health|\/ping|\/status|\/ready|\/live|\/version|\/api-docs|\/swagger|\/favicon|\/robots\.txt|\/public|\/static|\/assets|\/login|\/register|\/signup|\/forgot|\/reset-password|\/webhook)/i;
 
+  const isPython = path.extname(filePath).toLowerCase() === '.py';
+
+  // For FastAPI files: if auth is used anywhere in the file, all routes are protected
+  // via the same router/dependency injection — skip the per-route check entirely
+  if (isPython && hasFastAPIAuth(fileContent)) {
+    return;
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const match = ROUTE_PATTERN.exec(line);
-    if (!match) continue;
 
-    const routePath = match[1];
+    let routePath: string | undefined;
+    if (isPython) {
+      const match = PYTHON_ROUTE_PATTERN.exec(line);
+      if (!match) continue;
+      routePath = match[1];
+    } else {
+      const match = ROUTE_PATTERN.exec(line);
+      if (!match) continue;
+      routePath = match[1];
+    }
+
     if (publicPatterns.test(routePath)) continue;
 
-    // Check if any auth middleware is in the route handler chain
-    // Look at this line and the next few lines (route definitions can span lines)
-    const context = lines.slice(i, Math.min(i + 5, lines.length)).join(' ');
-    const hasAuth = AUTH_MIDDLEWARE_NAMES.some((name) => context.includes(name));
+    let hasAuth: boolean;
+    if (isPython) {
+      // For Python/FastAPI: check if the route handler function has a Depends() auth dependency
+      hasAuth = routeHasFastAPIAuth(fileContent, i);
+    } else {
+      // Check if any auth middleware is in the route handler chain
+      // Look at this line and the next few lines (route definitions can span lines)
+      const context = lines.slice(i, Math.min(i + 5, lines.length)).join(' ');
+      hasAuth = AUTH_MIDDLEWARE_NAMES.some((name) => context.includes(name));
+    }
 
     if (!hasAuth) {
       addFinding(findings, {
@@ -303,9 +343,13 @@ const JWT_ALGORITHM_NONE = /algorithm\s*[:=]\s*['"`]none['"`]/i;
 
 function checkJwtIssues(
   lines: string[],
+  fileContent: string,
+  filePath: string,
   relativeFile: string,
   findings: Finding[],
 ): void {
+  const isPython = path.extname(filePath).toLowerCase() === '.py';
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
@@ -353,21 +397,26 @@ function checkJwtIssues(
 
     // Check for jwt.decode without verify
     if (JWT_NO_VERIFY_PATTERN.test(line)) {
-      // Check context for whether verify is also used
-      const context = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 5)).join('\n');
-      if (!context.includes('verify') && !context.includes('// decode only')) {
-        addFinding(findings, {
-          severity: 'P0',
-          category: 'jwt-misconfiguration',
-          control_id: 'AUTH-005',
-          title: 'JWT decoded without signature verification',
-          description: 'jwt.decode() used instead of jwt.verify() — tokens are not validated',
-          file: relativeFile,
-          line: i + 1,
-          evidence: line,
-          remediation: 'Use jwt.verify() to validate token signatures. jwt.decode() does not check authenticity.',
-          standard_refs: ['CWE-345', 'CWE-347', 'OWASP-A02:2021'],
-        });
+      // For Python files using python-jose: jwt.decode() verifies by default
+      if (isPython && isPythonJoseVerifiedDecode(fileContent, i)) {
+        // python-jose verifies on decode — not a vulnerability, skip
+      } else {
+        // Check context for whether verify is also used
+        const context = lines.slice(Math.max(0, i - 5), Math.min(lines.length, i + 5)).join('\n');
+        if (!context.includes('verify') && !context.includes('// decode only')) {
+          addFinding(findings, {
+            severity: 'P0',
+            category: 'jwt-misconfiguration',
+            control_id: 'AUTH-005',
+            title: 'JWT decoded without signature verification',
+            description: 'jwt.decode() used instead of jwt.verify() — tokens are not validated',
+            file: relativeFile,
+            line: i + 1,
+            evidence: line,
+            remediation: 'Use jwt.verify() to validate token signatures. jwt.decode() does not check authenticity.',
+            standard_refs: ['CWE-345', 'CWE-347', 'OWASP-A02:2021'],
+          });
+        }
       }
     }
 
@@ -399,12 +448,18 @@ function checkMissingCsrf(
   lines: string[],
   relativeFile: string,
   findings: Finding[],
+  targetDir: string,
 ): void {
   // Only check if file defines state-changing routes but doesn't reference CSRF
   const hasStateChangingRoutes = CSRF_STATE_CHANGE_PATTERN.test(content);
   const hasCsrf = CSRF_MIDDLEWARE_NAMES.some((name) =>
     content.toLowerCase().includes(name.toLowerCase()),
   );
+
+  // Token-based auth (JWT Bearer, API key in header) is not CSRF-vulnerable
+  if (usesJWTBearerAuth(content) || projectUsesTokenAuth(targetDir)) {
+    return;
+  }
 
   if (hasStateChangingRoutes && !hasCsrf) {
     // Find first state-changing route for the finding location
@@ -429,7 +484,7 @@ function checkMissingCsrf(
 }
 
 export async function scan(targetDir: string): Promise<Finding[]> {
-  findingCounter = 0;
+  findingCounter.reset();
   const findings: Finding[] = [];
   const files = collectFiles(targetDir);
 
@@ -448,12 +503,12 @@ export async function scan(targetDir: string): Promise<Finding[]> {
     const isTest = /(?:test|spec|mock|fixture|__test__|__spec__|\.test\.|\.spec\.)/i.test(filePath);
     if (isTest) continue;
 
-    checkRoutesWithoutAuth(lines, relativeFile, findings);
+    checkRoutesWithoutAuth(lines, content, filePath, relativeFile, findings);
     checkMissingOwnershipChecks(lines, relativeFile, findings);
     checkMissingRoleChecks(lines, relativeFile, findings);
     checkCorsIssues(lines, relativeFile, findings);
-    checkJwtIssues(lines, relativeFile, findings);
-    checkMissingCsrf(content, lines, relativeFile, findings);
+    checkJwtIssues(lines, content, filePath, relativeFile, findings);
+    checkMissingCsrf(content, lines, relativeFile, findings, targetDir);
   }
 
   return findings;

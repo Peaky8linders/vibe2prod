@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { SKIP_DIRS, parseGitignore, isGitignored, isCommentLine, isPlaceholderValue, isExampleConfigFile } from './scan-utils';
 
 export interface Finding {
   id: string;
@@ -147,12 +148,6 @@ const SECRET_PATTERNS: SecretPattern[] = [
   },
 ];
 
-const SKIP_DIRS = new Set([
-  'node_modules', '.git', '.next', 'dist', 'build', 'coverage',
-  '__pycache__', '.venv', 'venv', '.tox', '.mypy_cache',
-  'vendor', '.terraform', '.gradle',
-]);
-
 const CODE_EXTENSIONS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
   '.py', '.rb', '.go', '.java', '.rs', '.php',
@@ -170,7 +165,7 @@ function shouldScanFile(filePath: string): boolean {
   return CODE_EXTENSIONS.has(ext);
 }
 
-function collectFiles(dir: string): string[] {
+function collectFiles(dir: string, gitignorePatterns: Set<string>): string[] {
   const files: string[] = [];
 
   function walk(currentDir: string): void {
@@ -187,7 +182,10 @@ function collectFiles(dir: string): string[] {
           walk(path.join(currentDir, entry.name));
         }
       } else if (entry.isFile() && shouldScanFile(entry.name)) {
-        files.push(path.join(currentDir, entry.name));
+        const filePath = path.join(currentDir, entry.name);
+        if (!isGitignored(path.relative(dir, filePath), gitignorePatterns)) {
+          files.push(filePath);
+        }
       }
     }
   }
@@ -197,20 +195,17 @@ function collectFiles(dir: string): string[] {
 }
 
 function isLikelyFalsePositive(line: string, filePath: string): boolean {
-  const trimmed = line.trim();
-  // Skip comments that are documentation or examples
-  if (/^\s*(\/\/|#|\/\*|\*)\s*(example|e\.g\.|TODO|FIXME|NOTE|see |ref:|@)/i.test(trimmed)) {
-    return true;
-  }
+  // Skip ALL comment lines (not just ones with specific keywords)
+  if (isCommentLine(line)) return true;
+  // Skip placeholder values universally (not just in test files)
+  if (isPlaceholderValue(line)) return true;
+  // Skip example config files (.env.example, .env.sample, etc.)
+  if (isExampleConfigFile(filePath)) return true;
   // Skip test fixtures with obviously fake values
-  if (/test|spec|mock|fixture|fake|dummy|sample|example/i.test(filePath)) {
-    if (/['"`](test|fake|dummy|example|placeholder|xxx|your-?|my-?|change-?me)/i.test(line)) {
+  if (/test|spec|mock|fixture|fake|dummy|sample/i.test(filePath)) {
+    if (/['"\`](test|fake|dummy|example|placeholder|xxx|your-?|my-?|change-?me)/i.test(line)) {
       return true;
     }
-  }
-  // Skip lines that reference env vars (i.e., they're doing the right thing)
-  if (/process\.env\.|os\.environ|env\(|getenv|ENV\[/i.test(line)) {
-    return false; // Actually check these — might have fallback hardcoded values
   }
   return false;
 }
@@ -225,19 +220,18 @@ function extractEvidence(line: string): string {
   return evidence;
 }
 
-let findingCounter = 0;
-
 function createFinding(
   pattern: SecretPattern,
   filePath: string,
   lineNumber: number,
   line: string,
   targetDir: string,
+  counter: { value: number },
 ): Finding {
-  findingCounter++;
+  counter.value++;
   const relativeFile = path.relative(targetDir, filePath);
   return {
-    id: `SEC-${String(findingCounter).padStart(3, '0')}`,
+    id: `SEC-${String(counter.value).padStart(3, '0')}`,
     domain: 3,
     control_id: 'DATA-003',
     severity: 'P0',
@@ -254,9 +248,10 @@ function createFinding(
 }
 
 export async function scan(targetDir: string): Promise<Finding[]> {
-  findingCounter = 0;
+  const counter = { value: 0 };
+  const gitignorePatterns = parseGitignore(targetDir);
   const findings: Finding[] = [];
-  const files = collectFiles(targetDir);
+  const files = collectFiles(targetDir, gitignorePatterns);
 
   for (const filePath of files) {
     let content: string;
@@ -273,7 +268,7 @@ export async function scan(targetDir: string): Promise<Finding[]> {
 
       for (const pattern of SECRET_PATTERNS) {
         if (pattern.regex.test(line)) {
-          findings.push(createFinding(pattern, filePath, i + 1, line, targetDir));
+          findings.push(createFinding(pattern, filePath, i + 1, line, targetDir, counter));
           break; // One finding per line to avoid duplicates
         }
       }
