@@ -96,7 +96,11 @@ switch (command) {
     break;
 
   case "score":
-    tsx("scripts/readiness-score.ts", args.slice(1));
+    if (args.includes("--antifragile")) {
+      tsx("scoring/antifragility-score.ts", args.slice(1));
+    } else {
+      tsx("scripts/readiness-score.ts", args.slice(1));
+    }
     break;
 
   case "fix":
@@ -135,6 +139,14 @@ switch (command) {
 
   case "chaos":
     tsx("chaos/chaos-runner.ts", args.slice(1));
+    break;
+
+  case "learn":
+    tsx("sentinel/learn.ts", args.slice(1));
+    break;
+
+  case "judges:audit":
+    tsx("judges/production-accuracy.ts", args.slice(1));
     break;
 
   case "seal":
@@ -195,11 +207,13 @@ switch (command) {
     console.log(`  ${GREEN}init${NC} <path>           Copy project, capture baseline, scan defects`);
     console.log(`  ${GREEN}scan${NC} [--llm]          Run defect scanner`);
     console.log(`  ${GREEN}eval${NC}                  Run full eval harness`);
-    console.log(`  ${GREEN}score${NC} [--detail]      Show readiness score`);
+    console.log(`  ${GREEN}score${NC} [--detail]      Show readiness score (--antifragile for 3-component)`);
     console.log(`  ${GREEN}fix${NC}                   Run single fix attempt`);
     console.log(`  ${GREEN}run${NC} <dim> [--hours N] Autonomous hardening loop`);
     console.log(`  ${GREEN}subtract${NC} [--merge]     Via negativa — find attack surface to remove`);
     console.log(`  ${GREEN}chaos${NC} [--merge]        Run adversarial probes against hardened code`);
+    console.log(`  ${GREEN}learn${NC} [--merge]        Process production signals into new defects`);
+    console.log(`  ${GREEN}judges:audit${NC}           Judge accuracy vs production outcomes`);
     console.log(`  ${GREEN}badge${NC}                 Generate embeddable readiness badges`);
     console.log(`  ${GREEN}report${NC}                Generate HTML stakeholder report`);
     console.log(`  ${GREEN}launch-report${NC}         Generate PDF launch readiness report`);
