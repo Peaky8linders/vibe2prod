@@ -133,6 +133,10 @@ switch (command) {
     tsx("subtract/scanner.ts", args.slice(1));
     break;
 
+  case "chaos":
+    tsx("chaos/chaos-runner.ts", args.slice(1));
+    break;
+
   case "seal":
     run("bash scripts/seal-evals.sh");
     break;
@@ -195,6 +199,7 @@ switch (command) {
     console.log(`  ${GREEN}fix${NC}                   Run single fix attempt`);
     console.log(`  ${GREEN}run${NC} <dim> [--hours N] Autonomous hardening loop`);
     console.log(`  ${GREEN}subtract${NC} [--merge]     Via negativa — find attack surface to remove`);
+    console.log(`  ${GREEN}chaos${NC} [--merge]        Run adversarial probes against hardened code`);
     console.log(`  ${GREEN}badge${NC}                 Generate embeddable readiness badges`);
     console.log(`  ${GREEN}report${NC}                Generate HTML stakeholder report`);
     console.log(`  ${GREEN}launch-report${NC}         Generate PDF launch readiness report`);
