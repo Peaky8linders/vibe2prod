@@ -95,6 +95,10 @@ switch (command) {
     tsx("scripts/scan-e2e.ts", args.slice(1));
     break;
 
+  case "harden:post-migration":
+    tsx("integrations/migrationforge.ts", args.slice(1));
+    break;
+
   case "eval":
     tsx("evals/harness.ts", args.slice(1));
     break;
