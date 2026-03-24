@@ -14,6 +14,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["evals/**/*.ts", "scripts/**/*.ts", "subtract/**/*.ts"],
+  "include": ["evals/**/*.ts", "scripts/**/*.ts", "subtract/**/*.ts", "chaos/**/*.ts"],
   "exclude": ["node_modules", "dist", "target"]
 }

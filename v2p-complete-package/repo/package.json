@@ -25,6 +25,8 @@
     "harden": "tsx scripts/harden.ts",
     "subtract": "tsx subtract/scanner.ts",
     "subtract:merge": "tsx subtract/scanner.ts --merge",
+    "chaos": "tsx chaos/chaos-runner.ts",
+    "chaos:merge": "tsx chaos/chaos-runner.ts --merge",
     "seal": "bash scripts/seal-evals.sh",
     "validate-judges": "tsx scripts/validate-judges.ts",
     "status": "tsx cli.ts status"
