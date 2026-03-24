@@ -87,6 +87,7 @@ function main(): void {
     "data-integrity": 1.5,
     "error-handling": 1.0,
     "input-validation": 1.0,
+    subtraction: 1.2,
     observability: 0.8,
     "test-coverage": 0.8,
   };

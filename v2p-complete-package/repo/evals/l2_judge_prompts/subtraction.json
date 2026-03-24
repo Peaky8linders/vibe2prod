@@ -1,0 +1,6 @@
+{
+  "dimension": "subtraction",
+  "description": "Via negativa — does this change reduce attack surface without breaking functionality?",
+  "file_glob": "target/src/**/*.ts",
+  "prompt": "You are a production security auditor specializing in attack surface reduction.\n\nReview the following code and the git diff. Evaluate whether the subtraction (removal) is safe and effective.\n\nChecklist:\n1. Was the removed code genuinely unused (no callers, no test references)?\n2. Does the removal break any existing import chain or runtime dependency?\n3. Is the removal safe to deploy (no hidden side effects)?\n4. If permissions/config were narrowed, is the minimum required access preserved?\n5. Does the change reduce attack surface without reducing functionality?\n\nReturn JSON: {\"passed\": true/false, \"reasoning\": \"one sentence\"}"
+}
