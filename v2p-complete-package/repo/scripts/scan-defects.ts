@@ -32,6 +32,9 @@ interface Defect {
   fix_commit: string | null;
   attempts: number;
   needs_human_review: boolean;
+  source: "scan" | "chaos" | "production" | "judge-failure" | "subtract";
+  discovered_at: string;
+  approved_by_judge?: string;
 }
 
 interface DefectTaxonomy {
@@ -53,6 +56,13 @@ function nextId(prefix: string): string {
   return `${prefix}-${String(defectCounter).padStart(3, "0")}`;
 }
 
+const SCAN_TIMESTAMP = new Date().toISOString();
+
+/** Default fields for scan-discovered defects */
+function scanDefaults(): Pick<Defect, "source" | "discovered_at"> {
+  return { source: "scan", discovered_at: SCAN_TIMESTAMP };
+}
+
 const scanErrorHandling: Scanner = (file, _content, lines) => {
   const defects: Defect[] = [];
 
@@ -71,6 +81,7 @@ const scanErrorHandling: Scanner = (file, _content, lines) => {
           line_range: [i + 1, i + 1],
           description: `External call without try/catch at line ${i + 1}`,
           fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
         });
       }
     }
@@ -85,6 +96,7 @@ const scanErrorHandling: Scanner = (file, _content, lines) => {
         line_range: [i + 1, i + 1],
         description: `Empty catch block — error swallowed at line ${i + 1}`,
         fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
       });
     }
 
@@ -98,6 +110,7 @@ const scanErrorHandling: Scanner = (file, _content, lines) => {
         line_range: [i + 1, i + 1],
         description: `fetch() without timeout/AbortController at line ${i + 1}`,
         fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
       });
     }
   }
@@ -124,6 +137,7 @@ const scanInputValidation: Scanner = (file, content, lines) => {
         line_range: [lineNum, lineNum],
         description: `API handler (${match[1]!.toUpperCase()}) without input validation at line ${lineNum}`,
         fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
       });
     }
   }
@@ -140,6 +154,7 @@ const scanInputValidation: Scanner = (file, content, lines) => {
         line_range: [i + 1, i + 1],
         description: `\`any\` type at line ${i + 1} — bypasses type safety`,
         fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
       });
     }
   }
@@ -171,6 +186,7 @@ const scanSecurity: Scanner = (file, content, lines) => {
           line_range: [i + 1, i + 1],
           description: `Hardcoded ${name} at line ${i + 1}`,
           fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
         });
       }
     }
@@ -187,6 +203,7 @@ const scanSecurity: Scanner = (file, content, lines) => {
       line_range: null,
       description: "Potential SQL injection — string concatenation in query",
       fixed: false, fix_commit: null, attempts: 0, needs_human_review: true,
+      ...scanDefaults(),
     });
   }
 
@@ -200,6 +217,7 @@ const scanSecurity: Scanner = (file, content, lines) => {
       line_range: null,
       description: "CORS configured with no restrictions (allows all origins)",
       fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+      ...scanDefaults(),
     });
   }
 
@@ -220,6 +238,7 @@ const scanObservability: Scanner = (file, content, lines) => {
         line_range: [i + 1, i + 1],
         description: `console.log instead of structured logger at line ${i + 1}`,
         fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
       });
     }
   }
@@ -235,6 +254,7 @@ const scanObservability: Scanner = (file, content, lines) => {
         line_range: null,
         description: "API handler file with no structured logging",
         fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+          ...scanDefaults(),
       });
     }
   }
@@ -266,6 +286,7 @@ const scanTestCoverage: Scanner = (file, content, _lines) => {
       line_range: null,
       description: "Exported module with no corresponding test file",
       fixed: false, fix_commit: null, attempts: 0, needs_human_review: false,
+      ...scanDefaults(),
     });
   }
 
@@ -325,6 +346,8 @@ Focus on: missing error handling, unvalidated inputs, hardcoded secrets, SQL inj
       fix_commit: null,
       attempts: 0,
       needs_human_review: true, // LLM findings always need human triage
+      source: "scan" as const,
+      discovered_at: SCAN_TIMESTAMP,
     }));
   } catch (err) {
     console.warn(`  LLM scan failed for ${file}:`, err);
@@ -386,7 +409,12 @@ async function main(): Promise<void> {
         const content = readFileSync(file, "utf-8");
         const lines = content.split("\n");
         for (const scanner of allPythonScanners) {
-          allDefects.push(...scanner(file, content, lines));
+          const pyDefects = scanner(file, content, lines) as unknown as Array<Record<string, unknown>>;
+          allDefects.push(...pyDefects.map((d) => ({
+            ...(d as Omit<Defect, "source" | "discovered_at">),
+            source: "scan" as const,
+            discovered_at: SCAN_TIMESTAMP,
+          })));
         }
       }
     } catch {
@@ -429,6 +457,7 @@ async function main(): Promise<void> {
     "input-validation": { defects: [] },
     observability: { defects: [] },
     "test-coverage": { defects: [] },
+    subtraction: { defects: [] },
   };
 
   for (const defect of dedupedDefects) {

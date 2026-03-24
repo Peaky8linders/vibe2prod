@@ -23,6 +23,8 @@
     "launch-report": "tsx scripts/generate-launch-report.ts",
     "badge": "tsx scripts/generate-badge.ts",
     "harden": "tsx scripts/harden.ts",
+    "subtract": "tsx subtract/scanner.ts",
+    "subtract:merge": "tsx subtract/scanner.ts --merge",
     "seal": "bash scripts/seal-evals.sh",
     "validate-judges": "tsx scripts/validate-judges.ts",
     "status": "tsx cli.ts status"

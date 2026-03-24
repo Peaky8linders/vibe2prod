@@ -19,6 +19,9 @@
     },
     "test-coverage": {
       "defects": []
+    },
+    "subtraction": {
+      "defects": []
     }
   },
   "defect_schema": {
