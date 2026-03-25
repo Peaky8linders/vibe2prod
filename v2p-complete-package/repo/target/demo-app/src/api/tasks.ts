@@ -59,7 +59,12 @@ router.post('/', requireAuth, async (req, res) => {
 // Update a task (with ownership check)
 router.put('/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { title, description, priority, status, due_date } = req.body;
+  const parsed = updateTaskSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0].message });
+    return;
+  }
+  const { title, description, priority, status, due_date } = parsed.data;
 
   try {
     // Verify ownership before updating
