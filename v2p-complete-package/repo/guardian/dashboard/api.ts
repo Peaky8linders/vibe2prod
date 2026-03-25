@@ -6,6 +6,7 @@
  */
 
 import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
@@ -80,6 +81,34 @@ export async function startDashboard(port = 3002): Promise<void> {
     origin: [`http://localhost:${port}`, `http://127.0.0.1:${port}`],
   }));
   app.use(express.json({ limit: '100kb' }));
+
+  // Rate limiting — simple in-memory limiter (no extra dependency for local dashboard)
+  const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+  app.use('/api/', (req: Request, res: Response, next: NextFunction) => {
+    const ip = req.ip ?? '127.0.0.1';
+    const now = Date.now();
+    const window = 60_000; // 1 minute
+    const maxRequests = 120;
+    const entry = rateLimitMap.get(ip);
+    if (!entry || now > entry.resetAt) {
+      rateLimitMap.set(ip, { count: 1, resetAt: now + window });
+      return next();
+    }
+    entry.count++;
+    if (entry.count > maxRequests) {
+      return res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+    next();
+  });
+
+  // Security headers (inline — no helmet dependency for local dashboard)
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '0'); // Modern browsers use CSP instead
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
 
   // Serve dashboard UI
   app.use('/', express.static(path.join(__dirname)));
