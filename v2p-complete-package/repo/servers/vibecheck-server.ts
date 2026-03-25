@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * servers/v2p-server.ts — V2P MCP Server
+ * servers/v2p-server.ts — VibeCheck MCP Server
  *
  * Exposes V2P CLI commands as MCP tools for Claude Code integration.
  * Uses stdio transport (JSON-RPC over stdin/stdout).
@@ -92,16 +92,16 @@ function formatResult(result: { stdout: string; stderr: string; exitCode: number
 // ---------------------------------------------------------------------------
 
 const server = new McpServer({
-  name: "v2p",
+  name: "vibecheck",
   version: "2.0.0",
 });
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_status — Quick overview of current state
+// Tool: vc_status — Quick overview of current state
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_status",
+  "vc_status",
   "Quick overview of V2P state: target loaded, defects fixed, readiness score",
   {},
   async () => {
@@ -110,7 +110,7 @@ server.tool(
     // Check target
     const hasTarget = existsSync(resolve(ROOT, "target/package.json")) ||
       existsSync(resolve(ROOT, "target/demo-app/package.json"));
-    lines.push(`Target project: ${hasTarget ? "loaded" : "empty — run v2p init <path>"}`);
+    lines.push(`Target project: ${hasTarget ? "loaded" : "empty — run vibecheck init <path>"}`);
 
     // Check taxonomy
     const taxPath = resolve(ROOT, "evals/defect-taxonomy.json");
@@ -146,11 +146,11 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_scan — Run defect scanner
+// Tool: vc_scan — Run defect scanner
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_scan",
+  "vc_scan",
   "Scan target project for production readiness defects. Produces a structured defect taxonomy.",
   { llm: z.boolean().optional().describe("Enable LLM-assisted deep scan (requires ANTHROPIC_API_KEY)") },
   async ({ llm }) => {
@@ -160,22 +160,22 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_eval — Run full eval harness
+// Tool: vc_eval — Run full eval harness
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_eval",
+  "vc_eval",
   "Run the full eval harness: L1 assertions + L2 judges + security gates + behavioral checks. Returns JSON.",
   {},
   async () => formatResult(runTsx("evals/harness.ts")),
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_score — Show readiness score
+// Tool: vc_score — Show readiness score
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_score",
+  "vc_score",
   "Show production readiness score. Use --antifragile for three-component scoring (Robustness + Chaos Freshness + Production Adaptation).",
   {
     detail: z.boolean().optional().describe("Show per-dimension breakdown"),
@@ -192,11 +192,11 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_fix — Run single fix attempt
+// Tool: vc_fix — Run single fix attempt
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_fix",
+  "vc_fix",
   "Run a single atomic fix attempt. Applies a fix, runs eval gates, commits if all pass or reverts if any fail.",
   { defect_id: z.string().regex(/^[A-Z]{2,4}-\d{1,4}$/).optional().describe("Specific defect ID to fix (e.g. SEC-001)") },
   async ({ defect_id }) => {
@@ -206,11 +206,11 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_subtract — Via Negativa scanner
+// Tool: vc_subtract — Via Negativa scanner
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_subtract",
+  "vc_subtract",
   "Via Negativa: scan for attack surface to REMOVE — unused deps, dead endpoints, broad config, unnecessary exposure.",
   { merge: z.boolean().optional().describe("Merge findings into defect taxonomy") },
   async ({ merge }) => {
@@ -220,11 +220,11 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_chaos — Adversarial chaos testing
+// Tool: vc_chaos — Adversarial chaos testing
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_chaos",
+  "vc_chaos",
   "Run adversarial probes against hardened endpoints: input fuzzing, auth bypass, injection replay, dependency failure.",
   {
     endpoint: z.string().optional().describe("Target specific endpoint (e.g. /api/users)"),
@@ -239,30 +239,30 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_learn — Process production signals
+// Tool: vc_learn — Process production signals
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_learn",
+  "vc_learn",
   "Process production signals from sentinel middleware into new defect taxonomy entries.",
   {
-    from: z.string().optional().describe("Path to sentinel JSONL file (default: .v2p/sentinel.jsonl)"),
+    from: z.string().optional().describe("Path to sentinel JSONL file (default: .vibecheck/sentinel.jsonl)"),
     merge: z.boolean().optional().describe("Merge findings into defect taxonomy"),
   },
   async ({ from, merge }) => {
     const args: string[] = [];
-    if (from) args.push("--from", validatePath(from, "v2p_learn"));
+    if (from) args.push("--from", validatePath(from, "vc_learn"));
     if (merge) args.push("--merge");
     return formatResult(runTsx("sentinel/learn.ts", args));
   },
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_scan_e2e — End-to-end file-by-file scan with actionable prompts
+// Tool: vc_scan_e2e — End-to-end file-by-file scan with actionable prompts
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_scan_e2e",
+  "vc_scan_e2e",
   "End-to-end file-by-file scan with per-file readiness scores, actionable fix prompts, and remediation plan.",
   {
     path: z.string().optional().describe("Path to project to scan (default: target/)"),
@@ -270,25 +270,25 @@ server.tool(
   },
   async ({ path, prompts }) => {
     const args = ["--report"];
-    if (path) args.push("--path", validatePath(path, "v2p_scan_e2e"));
+    if (path) args.push("--path", validatePath(path, "vc_scan_e2e"));
     if (prompts) args.push("--prompts");
     return formatResult(runTsx("scripts/scan-e2e.ts", args));
   },
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_harden_post_migration — Post-migration hardening with trust score
+// Tool: vc_harden_post_migration — Post-migration hardening with trust score
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_harden_post_migration",
+  "vc_harden_post_migration",
   "Run post-migration hardening scan against a MigrationForge project. Computes enhanced trust score (A-F).",
   {
     path: z.string().describe("Path to the MigrationForge project"),
     module: z.string().optional().describe("Scan a specific module only"),
   },
   async ({ path, module }) => {
-    const validPath = validatePath(path, "v2p_harden_post_migration");
+    const validPath = validatePath(path, "vc_harden_post_migration");
     const args = ["--path", validPath];
     if (module) args.push("--module", module);
     return formatResult(runTsx("integrations/migrationforge.ts", args));
@@ -296,11 +296,11 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_analyze — Error analysis of hardening loop
+// Tool: vc_analyze — Error analysis of hardening loop
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_analyze",
+  "vc_analyze",
   "Guided error analysis of hardening loop failures. Groups reverts by failure category, sorted by frequency.",
   {
     detail: z.boolean().optional().describe("Show individual failure traces"),
@@ -315,22 +315,22 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_report — Generate stakeholder report
+// Tool: vc_report — Generate stakeholder report
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_report",
+  "vc_report",
   "Generate an HTML stakeholder report showing readiness score, defects fixed, and remaining work.",
   {},
   async () => formatResult(runTsx("scripts/generate-report.ts")),
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_validate_judges — Validate L2 judges
+// Tool: vc_validate_judges — Validate L2 judges
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_validate_judges",
+  "vc_validate_judges",
   "Validate L2 judges against gold labels using TPR/TNR metrics with Rogan-Gladen bias correction.",
   {
     disagreements: z.boolean().optional().describe("Show all human-judge disagreements"),
@@ -345,11 +345,11 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
-// Tool: v2p_judges_audit — Judge accountability
+// Tool: vc_judges_audit — Judge accountability
 // ---------------------------------------------------------------------------
 
 server.tool(
-  "v2p_judges_audit",
+  "vc_judges_audit",
   "Audit L2 judge accuracy against production outcomes. Flags judges with >5% false positive rate.",
   { flag: z.boolean().optional().describe("Auto-flag failing judges and write audit report") },
   async ({ flag }) => {
@@ -365,10 +365,10 @@ server.tool(
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  process.stderr.write("[v2p-mcp] Server started on stdio\n");
+  process.stderr.write("[vibecheck-mcp] Server started on stdio\n");
 }
 
 main().catch((err) => {
-  process.stderr.write(`[v2p-mcp] Fatal: ${err}\n`);
+  process.stderr.write(`[vibecheck-mcp] Fatal: ${err}\n`);
   process.exit(1);
 });

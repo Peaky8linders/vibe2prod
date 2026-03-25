@@ -248,7 +248,7 @@ function display(
         break;
       case "l2":
         console.log(`  ${YELLOW}${cat.name}${NC}: L2 judge rejections — is the judge too strict or miscalibrated?`);
-        console.log(`    Fix: Run v2p validate-judges --disagreements to inspect false negatives.`);
+        console.log(`    Fix: Run vibecheck validate-judges --disagreements to inspect false negatives.`);
         console.log(`    Then adjust judge prompts or add borderline few-shot examples.`);
         break;
       case "behavioral":
@@ -286,7 +286,7 @@ function main(): void {
   const logPath = "logs/fixes.jsonl";
   if (!existsSync(logPath)) {
     console.log("No fix history found at logs/fixes.jsonl");
-    console.log("Run v2p fix or v2p run to generate fix attempts first.\n");
+    console.log("Run vibecheck fix or vibecheck run to generate fix attempts first.\n");
     process.exit(0);
   }
 
@@ -297,7 +297,7 @@ function main(): void {
   }).filter((e): e is FixLogEntry => e !== null);
 
   if (entries.length === 0) {
-    console.log("Fix log is empty. Run v2p fix first.\n");
+    console.log("Fix log is empty. Run vibecheck fix first.\n");
     process.exit(0);
   }
 

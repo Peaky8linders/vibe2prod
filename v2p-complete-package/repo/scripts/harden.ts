@@ -6,11 +6,11 @@
  * a readiness report and badge.
  *
  * Usage:
- *   npx v2p harden                     # harden current directory
- *   npx v2p harden ../my-app           # harden a specific project
- *   npx v2p harden --dry-run           # scan only, don't fix
- *   npx v2p harden --max-fixes 10      # limit number of fix attempts
- *   npx v2p harden --no-report         # skip PDF report generation
+ *   npx vibecheck harden                     # harden current directory
+ *   npx vibecheck harden ../my-app           # harden a specific project
+ *   npx vibecheck harden --dry-run           # scan only, don't fix
+ *   npx vibecheck harden --max-fixes 10      # limit number of fix attempts
+ *   npx vibecheck harden --no-report         # skip PDF report generation
  */
 
 import { execSync } from "node:child_process";
@@ -461,7 +461,7 @@ async function main(): Promise<void> {
   } else if (!process.env["ANTHROPIC_API_KEY"]) {
     warn("No ANTHROPIC_API_KEY — fix application requires an API key");
     log(`  ${C.dim}Set: export ANTHROPIC_API_KEY=sk-ant-...${C.nc}`);
-    log(`  ${C.dim}Then re-run: npx v2p harden${C.nc}`);
+    log(`  ${C.dim}Then re-run: npx vibecheck harden${C.nc}`);
   }
 
   // Step 7: Compute readiness score
@@ -541,7 +541,7 @@ async function main(): Promise<void> {
   } else if (remaining === 0) {
     log(`  ${C.green}${C.bold}🚀 All defects resolved — ready to ship${C.nc}`);
   } else {
-    log(`  ${C.yellow}Run again or use 'v2p run' for deeper hardening${C.nc}`);
+    log(`  ${C.yellow}Run again or use 'vibecheck run' for deeper hardening${C.nc}`);
   }
 
   log("");
@@ -558,7 +558,7 @@ async function main(): Promise<void> {
 
 function generateBadgeInline(score: number): void {
   const color = score >= 80 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444";
-  const label = "v2p hardened";
+  const label = "vibecheck hardened";
   const value = `${score.toFixed(0)}%`;
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="20" role="img" aria-label="${label}: ${value}">

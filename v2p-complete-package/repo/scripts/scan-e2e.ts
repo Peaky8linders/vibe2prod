@@ -815,7 +815,7 @@ async function main(): Promise<void> {
 
   const generateReport = args.includes("--report") || !args.includes("--prompts");
 
-  console.log(`\x1b[36m[v2p-scan]\x1b[0m Scanning ${targetPath} file by file...\n`);
+  console.log(`\x1b[36m[vibecheck]\x1b[0m Scanning ${targetPath} file by file...\n`);
 
   // Discover source files, then filter out third-party and generated code
   // Note: glob ignore patterns can fail on Windows backslash paths, so we post-filter
@@ -861,7 +861,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`\x1b[36m[v2p-scan]\x1b[0m Found ${allFiles.length} files (${tsFiles.length} TS/JS, ${pyFiles.length} Python)\n`);
+  console.log(`\x1b[36m[vibecheck]\x1b[0m Found ${allFiles.length} files (${tsFiles.length} TS/JS, ${pyFiles.length} Python)\n`);
 
   // Scan each file
   const fileReports: FileReport[] = [];
@@ -949,7 +949,7 @@ async function main(): Promise<void> {
   };
 
   // Console summary
-  console.log(`\n\x1b[36m[v2p-scan]\x1b[0m Scan complete\n`);
+  console.log(`\n\x1b[36m[vibecheck]\x1b[0m Scan complete\n`);
   console.log(`  Files scanned:    ${result.files_scanned}`);
   console.log(`  Total defects:    ${result.total_defects}`);
   console.log(`  P0 (critical):    \x1b[31m${byPriority["P0"] ?? 0}\x1b[0m`);
@@ -960,7 +960,7 @@ async function main(): Promise<void> {
   console.log(`  Clean files:      ${result.summary.clean_files.length}`);
 
   if (result.actionable_skills.length > 0) {
-    console.log(`\n\x1b[36m[v2p-scan]\x1b[0m Generated ${result.actionable_skills.length} actionable fix skills`);
+    console.log(`\n\x1b[36m[vibecheck]\x1b[0m Generated ${result.actionable_skills.length} actionable fix skills`);
   }
 
   // Write outputs
@@ -973,7 +973,7 @@ async function main(): Promise<void> {
   if (generateReport) {
     const md = generateMarkdownReport(result);
     writeFileSync("reports/scan-e2e-report.md", md);
-    console.log(`\n\x1b[32m[v2p-scan]\x1b[0m Reports written:`);
+    console.log(`\n\x1b[32m[vibecheck]\x1b[0m Reports written:`);
     console.log(`  reports/scan-e2e-result.json (machine-readable)`);
     console.log(`  reports/scan-e2e-report.md   (human-readable + fix prompts)`);
   }
@@ -984,12 +984,12 @@ async function main(): Promise<void> {
     for (const skill of result.actionable_skills) {
       writeFileSync(`reports/prompts/${skill.name}.md`, `# ${skill.name}\n\n${skill.description}\n\n${skill.prompt}\n`);
     }
-    console.log(`\n\x1b[32m[v2p-scan]\x1b[0m Fix prompts written to reports/prompts/`);
+    console.log(`\n\x1b[32m[vibecheck]\x1b[0m Fix prompts written to reports/prompts/`);
   }
 
   // Exit with error if P0s found
   if ((byPriority["P0"] ?? 0) > 0) {
-    console.log(`\n\x1b[31m[v2p-scan]\x1b[0m BLOCKED: ${byPriority["P0"]} P0 defects must be fixed before deploy\n`);
+    console.log(`\n\x1b[31m[vibecheck]\x1b[0m BLOCKED: ${byPriority["P0"]} P0 defects must be fixed before deploy\n`);
     process.exit(1);
   }
 }

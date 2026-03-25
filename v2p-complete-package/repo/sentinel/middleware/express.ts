@@ -2,11 +2,11 @@
  * sentinel/middleware/express.ts — Production signal capture for Express
  *
  * Zero-config middleware that captures security-relevant events in production
- * and writes them to .v2p/sentinel.jsonl for the antifragile feedback loop.
+ * and writes them to .vibecheck/sentinel.jsonl for the antifragile feedback loop.
  *
  * Usage:
- *   import { v2pSentinel } from '@v2p/sentinel';
- *   app.use(v2pSentinel());
+ *   import { vcSentinel } from '@vibecheck/sentinel';
+ *   app.use(vcSentinel());
  *
  * Privacy-safe by architecture:
  *   - Captures attack patterns, not user data
@@ -52,7 +52,7 @@ export interface SentinelEvent {
 }
 
 export interface SentinelOptions {
-  /** Path to write events. Default: .v2p/sentinel.jsonl */
+  /** Path to write events. Default: .vibecheck/sentinel.jsonl */
   output?: string;
   /** Fields to always redact from captured payloads */
   redact?: string[];
@@ -143,7 +143,7 @@ class EventWriter {
       appendFileSync(this.outputPath, lines);
     } catch {
       // Disk full or permission denied — drop events rather than crash host app
-      process.stderr.write(`[v2p-sentinel] Failed to write events to ${this.outputPath}\n`);
+      process.stderr.write(`[vibecheck-sentinel] Failed to write events to ${this.outputPath}\n`);
     }
     this.buffer = [];
   }
@@ -153,14 +153,14 @@ class EventWriter {
 // Middleware
 // ---------------------------------------------------------------------------
 
-export function v2pSentinel(options: SentinelOptions = {}): Array<
+export function vcSentinel(options: SentinelOptions = {}): Array<
   ((req: Request, res: Response, next: NextFunction) => void) | ErrorRequestHandler
 > {
   if (options.disabled) {
     return [(_req: Request, _res: Response, next: NextFunction) => next()];
   }
 
-  const outputPath = options.output ?? ".v2p/sentinel.jsonl";
+  const outputPath = options.output ?? ".vibecheck/sentinel.jsonl";
   const redactFields = [...DEFAULT_REDACT_FIELDS, ...(options.redact ?? [])];
   const writer = new EventWriter(outputPath, options.bufferSize ?? 10);
 

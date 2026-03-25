@@ -1,4 +1,4 @@
-# Vibe-to-Prod
+# VibeCheck
 
 **Your app doesn't just survive attacks — it gets stronger from them.**
 
@@ -9,10 +9,10 @@ Autonomous production hardening that takes your working-but-fragile prototype an
 npx tsx cli.ts scan:e2e --path ../my-app --report
 
 # Or use as a Claude Code MCP server
-npx tsx servers/v2p-server.ts
+npx tsx servers/vibecheck-server.ts
 ```
 
-> **Security scanners tell you what's broken. V2P fixes it while you sleep.**
+> **Security scanners tell you what's broken. VibeCheck fixes it while you sleep.**
 
 ---
 
@@ -49,7 +49,7 @@ The repo ships with a deliberately vibe-coded Express task API full of real-worl
 
 ```bash
 git clone https://github.com/Peaky8linders/vibe2prod.git
-cd vibe-to-prod
+cd vibecheck
 npm install
 
 # Scan the demo app
@@ -104,8 +104,8 @@ npx tsx cli.ts run all --hours 8
 ## Repo Structure
 
 ```
-vibe-to-prod/
-├── cli.ts                        # v2p CLI entry point
+vibecheck/
+├── cli.ts                        # vibecheck CLI entry point
 ├── programs/                     # Karpathy-style program.md per dimension
 │   ├── security.md               #   hardcoded secrets, auth, CORS, SQLi
 │   ├── error-handling.md         #   try/catch, timeouts, retries
@@ -212,24 +212,24 @@ npx tsx scripts/scan-e2e.ts --path ../your-project --report
 
 ## MCP Server (Claude Code Plugin)
 
-Install as a Claude Code MCP server to use V2P tools directly in your editor:
+Install as a Claude Code MCP server to use VibeCheck tools directly in your editor:
 
 ```json
 {
   "mcpServers": {
-    "v2p": {
+    "vibecheck": {
       "command": "npx",
-      "args": ["tsx", "/path/to/v2p/servers/v2p-server.ts"]
+      "args": ["tsx", "/path/to/v2p/servers/vibecheck-server.ts"]
     }
   }
 }
 ```
 
-**14 tools available:** `v2p_scan`, `v2p_scan_e2e`, `v2p_fix`, `v2p_eval`, `v2p_score`, `v2p_chaos`, `v2p_subtract`, `v2p_learn`, `v2p_harden_post_migration`, `v2p_analyze`, `v2p_report`, and more.
+**14 tools available:** `vc_scan`, `vc_scan_e2e`, `vc_fix`, `vc_eval`, `vc_score`, `vc_chaos`, `vc_subtract`, `vc_learn`, `vc_harden_post_migration`, `vc_analyze`, `vc_report`, and more.
 
 ## Antifragile Architecture
 
-V2P doesn't just produce **robust** systems (withstand known attacks) — it produces **antifragile** systems (get stronger from every attack):
+VibeCheck doesn't just produce **robust** systems (withstand known attacks) — it produces **antifragile** systems (get stronger from every attack):
 
 ```
 HARDEN  →  Scan → Fix → Eval Gate → Commit/Revert
@@ -247,28 +247,28 @@ LEARN   →  Production signals → New defects → New eval judges
 
 | Component | Command | What it does |
 |---|---|---|
-| Chaos Testing | `v2p chaos` | 346 adversarial probes: fuzzing, injection replay, auth bypass, dependency failure |
-| Via Negativa | `v2p subtract` | Finds attack surface to REMOVE: dead endpoints, unused deps, broad permissions |
-| Sentinel | `app.use(v2pSentinel())` | Production middleware that captures security events for the feedback loop |
-| Antifragility Score | `v2p score --antifragile` | Three-component score: Robustness + Chaos Resilience + Production Adaptation |
+| Chaos Testing | `vibecheck chaos` | 346 adversarial probes: fuzzing, injection replay, auth bypass, dependency failure |
+| Via Negativa | `vibecheck subtract` | Finds attack surface to REMOVE: dead endpoints, unused deps, broad permissions |
+| Sentinel | `app.use(vcSentinel())` | Production middleware that captures security events for the feedback loop |
+| Antifragility Score | `vibecheck score --antifragile` | Three-component score: Robustness + Chaos Resilience + Production Adaptation |
 
 ## CLI Reference
 
 ```
-v2p init <path>              Copy project, capture baseline, scan defects
-v2p scan [--llm]             Run defect scanner (add --llm for deep analysis)
-v2p scan:e2e --path <p>      End-to-end file-by-file scan with fix prompts
-v2p eval                     Run full eval harness
-v2p score [--detail]         Show readiness score
-v2p score --antifragile      Three-component antifragility score
-v2p fix                      Run single fix attempt
-v2p run <dim> [--hours N]    Autonomous hardening loop
-v2p chaos                    Run adversarial probes against hardened code
-v2p subtract                 Via negativa — find attack surface to remove
-v2p learn                    Process production signals into new defects
-v2p harden:post-migration    Post-migration hardening with trust score
-v2p report                   Generate stakeholder HTML report
-v2p judges:audit             Judge accuracy vs production outcomes
+vibecheck init <path>              Copy project, capture baseline, scan defects
+vibecheck scan [--llm]             Run defect scanner (add --llm for deep analysis)
+vibecheck scan:e2e --path <p>      End-to-end file-by-file scan with fix prompts
+vibecheck eval                     Run full eval harness
+vibecheck score [--detail]         Show readiness score
+vibecheck score --antifragile      Three-component antifragility score
+vibecheck fix                      Run single fix attempt
+vibecheck run <dim> [--hours N]    Autonomous hardening loop
+vibecheck chaos                    Run adversarial probes against hardened code
+vibecheck subtract                 Via negativa — find attack surface to remove
+vibecheck learn                    Process production signals into new defects
+vibecheck harden:post-migration    Post-migration hardening with trust score
+vibecheck report                   Generate stakeholder HTML report
+vibecheck judges:audit             Judge accuracy vs production outcomes
 ```
 
 ## Contributing

@@ -1,14 +1,14 @@
 /**
  * sentinel/learn.ts — Process production signals into new defect taxonomy entries
  *
- * Reads sentinel events from .v2p/sentinel.jsonl, clusters by pattern,
+ * Reads sentinel events from .vibecheck/sentinel.jsonl, clusters by pattern,
  * deduplicates, assigns priority, and generates new defects tagged
  * with source: "production".
  *
  * Usage:
  *   npx tsx sentinel/learn.ts                             # analyze events
  *   npx tsx sentinel/learn.ts --merge                     # merge into taxonomy
- *   npx tsx sentinel/learn.ts --from .v2p/sentinel.jsonl  # custom path
+ *   npx tsx sentinel/learn.ts --from .vibecheck/sentinel.jsonl  # custom path
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -199,7 +199,7 @@ function main(): void {
   const args = process.argv.slice(2);
   const mergeIntoTaxonomy = args.includes("--merge");
   const fromIdx = args.indexOf("--from");
-  const eventPath = fromIdx >= 0 ? args[fromIdx + 1]! : ".v2p/sentinel.jsonl";
+  const eventPath = fromIdx >= 0 ? args[fromIdx + 1]! : ".vibecheck/sentinel.jsonl";
 
   console.log(`\x1b[34m[learn]\x1b[0m Reading production signals from ${eventPath}...\n`);
 
@@ -207,7 +207,7 @@ function main(): void {
 
   if (events.length === 0) {
     console.log("\x1b[34m[learn]\x1b[0m No sentinel events found.");
-    console.log("\x1b[2mTo start collecting: app.use(v2pSentinel()) in your Express app\x1b[0m");
+    console.log("\x1b[2mTo start collecting: app.use(vcSentinel()) in your Express app\x1b[0m");
     return;
   }
 

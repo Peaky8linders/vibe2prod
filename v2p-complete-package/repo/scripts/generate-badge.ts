@@ -2,7 +2,7 @@
  * scripts/generate-badge.ts — Embeddable readiness badge
  *
  * Produces SVG badges for READMEs, landing pages, and social proof:
- *   - readiness-badge.svg        "v2p hardened | 94%"
+ *   - readiness-badge.svg        "vibecheck hardened | 94%"
  *   - readiness-badge-detail.svg "security ✓ | errors ✓ | validation ✓ | 94%"
  *   - readiness-badge-shield.svg shields.io-compatible simple badge
  *
@@ -112,7 +112,7 @@ function colorForScore(score: number): string {
 
 function generateMainBadge(score: number): string {
   const color = colorForScore(score);
-  const labelText = "v2p hardened";
+  const labelText = "vibecheck hardened";
   const valueText = `${score}%`;
   const labelWidth = 88;
   const valueWidth = 46;
@@ -173,8 +173,8 @@ function generateDetailBadge(score: number, dimensions: DimScore[]): string {
     return rect + text;
   }).join("\n    ");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="v2p: ${score}%">
-  <title>v2p hardened: ${score}%</title>
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="vibecheck: ${score}%">
+  <title>vibecheck hardened: ${score}%</title>
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
     <stop offset="1" stop-opacity=".1"/>
@@ -187,7 +187,7 @@ function generateDetailBadge(score: number, dimensions: DimScore[]): string {
     <rect width="${totalWidth}" height="20" fill="url(#s)"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11">
-    <text x="${labelWidth / 2}" y="14">v2p</text>
+    <text x="${labelWidth / 2}" y="14">vibecheck</text>
     <text x="${x + scoreWidth / 2}" y="14" font-weight="bold">${score}%</text>
   </g>
 </svg>`;
@@ -199,7 +199,7 @@ function generateShieldBadge(score: number): string {
   <rect width="150" height="28" rx="5" fill="#1a1a1a"/>
   <rect x="1" y="1" width="148" height="26" rx="4" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.6"/>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="11">
-    <text x="50" y="18" fill="#ccc">v2p hardened</text>
+    <text x="50" y="18" fill="#ccc">vibecheck hardened</text>
     <text x="120" y="18" fill="${color}" font-weight="bold">${score}%</text>
   </g>
   <circle cx="14" cy="14" r="6" fill="none" stroke="${color}" stroke-width="1.5"/>
@@ -212,14 +212,14 @@ function generateShieldBadge(score: number): string {
 // ---------------------------------------------------------------------------
 
 function generateMarkdownSnippet(score: number): string {
-  return `<!-- V2P Readiness Badge -->
-[![V2P Hardened](reports/readiness-badge.svg)](https://github.com/yourorg/vibe-to-prod)
+  return `<!-- VibeCheck Readiness Badge -->
+[![V2P Hardened](reports/readiness-badge.svg)](https://github.com/yourorg/vibecheck)
 
 <!-- Or use the detail badge -->
-[![V2P Hardened](reports/readiness-badge-detail.svg)](https://github.com/yourorg/vibe-to-prod)
+[![V2P Hardened](reports/readiness-badge-detail.svg)](https://github.com/yourorg/vibecheck)
 
 <!-- For dark backgrounds -->
-[![V2P Hardened](reports/readiness-badge-shield.svg)](https://github.com/yourorg/vibe-to-prod)
+[![V2P Hardened](reports/readiness-badge-shield.svg)](https://github.com/yourorg/vibecheck)
 
 <!-- Score: ${score}% -->
 `;
