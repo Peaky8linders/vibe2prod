@@ -439,14 +439,14 @@ async function main(): Promise<void> {
       writeFileSync(taxPath, JSON.stringify(taxonomy, null, 2));
       console.log(`\n\x1b[32m[subtract]\x1b[0m Merged ${added} new findings into ${taxPath}`);
     } else {
-      console.log(`\n\x1b[33m[subtract]\x1b[0m No taxonomy file found at ${taxPath}. Run v2p scan first.`);
+      console.log(`\n\x1b[33m[subtract]\x1b[0m No taxonomy file found at ${taxPath}. Run vibecheck scan first.`);
     }
   } else {
     // Write standalone report
     const reportPath = "logs/subtract-findings.json";
     writeFileSync(reportPath, JSON.stringify({ findings: allFindings, defects, timestamp: SCAN_TIMESTAMP }, null, 2));
     console.log(`\n\x1b[35m[subtract]\x1b[0m Findings written to ${reportPath}`);
-    console.log(`\x1b[2mTo merge into taxonomy: v2p subtract --merge\x1b[0m`);
+    console.log(`\x1b[2mTo merge into taxonomy: vibecheck subtract --merge\x1b[0m`);
   }
 }
 

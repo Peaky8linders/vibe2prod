@@ -1,16 +1,16 @@
 {
-  "name": "vibe-to-prod",
+  "name": "vibecheck",
   "version": "2.0.0",
   "description": "Autonomous production hardening for vibe-coded projects — antifragile systems that get stronger from attack",
   "type": "module",
   "bin": {
-    "v2p": "./cli.ts",
-    "v2p-mcp": "./dist/servers/v2p-server.js"
+    "vibecheck": "./cli.ts",
+    "vibecheck-mcp": "./dist/servers/vibecheck-server.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "build:server": "tsc -p tsconfig.build.json && node -e \"console.log('Build complete')\"",
-    "v2p": "tsx cli.ts",
+    "vibecheck": "tsx cli.ts",
     "scan": "tsx scripts/scan-defects.ts",
     "scan:llm": "tsx scripts/scan-defects.ts --llm",
     "scan:e2e": "tsx scripts/scan-e2e.ts --report",

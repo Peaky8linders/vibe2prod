@@ -374,8 +374,8 @@ async function main(): Promise<void> {
 
   if (allFiles.length === 0) {
     console.log("No source files found in target/. Is your project copied into target/?");
-    console.log("  For the demo:  v2p init target/demo-app");
-    console.log("  For your app:  v2p init ../your-project");
+    console.log("  For the demo:  vibecheck init target/demo-app");
+    console.log("  For your app:  vibecheck init ../your-project");
     process.exit(1);
   }
 
@@ -500,7 +500,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\nTaxonomy written to evals/defect-taxonomy.json`);
-  console.log("Next: review and adjust priorities, then run: v2p run security --hours 4");
+  console.log("Next: review and adjust priorities, then run: vibecheck run security --hours 4");
 }
 
 main().catch(console.error);

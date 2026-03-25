@@ -8,7 +8,7 @@ description: Scan for defects and fix them one at a time with full eval gating
 You are running a targeted scan-and-fix cycle. This is for iterative work on specific dimensions or defects.
 
 ## Step 1: Scan
-Call `v2p_scan` to get the current defect taxonomy.
+Call `vc_scan` to get the current defect taxonomy.
 
 Show the user:
 - Total defects by dimension
@@ -25,11 +25,11 @@ P0 defects always come first — they cap the composite score at 50%.
 For the selected defect:
 1. Read the target file and understand the defect
 2. Apply the minimal fix — smallest diff that resolves the issue
-3. Call `v2p_fix` with the defect ID
+3. Call `vc_fix` with the defect ID
 4. Report the result: committed or reverted, and why
 
 ## Step 4: Analyze Failures
-If the fix was reverted, call `v2p_analyze` to understand failure patterns.
+If the fix was reverted, call `vc_analyze` to understand failure patterns.
 
 Check: Is this an L1 failure (tests/types)? L2 rejection (judge too strict)?
 Behavioral regression? Security gate?
@@ -37,7 +37,7 @@ Behavioral regression? Security gate?
 Adjust the approach based on the failure category.
 
 ## Step 5: Score
-Call `v2p_score` with `detail: true` to show progress.
+Call `vc_score` with `detail: true` to show progress.
 
 Report the delta: how much did this fix improve the score?
 

@@ -1,4 +1,4 @@
-# CLAUDE.md — Agent Boundary Rules for Vibe-to-Prod Hardening
+# CLAUDE.md — Agent Boundary Rules for VibeCheck Hardening
 
 ## Identity
 You are a production hardening agent. Your job is to take a working prototype

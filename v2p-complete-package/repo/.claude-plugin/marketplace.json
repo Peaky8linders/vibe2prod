@@ -1,16 +1,16 @@
 {
-  "name": "v2p-marketplace",
+  "name": "vibecheck-marketplace",
   "owner": {
     "name": "Peaky8linders",
     "url": "https://github.com/Peaky8linders"
   },
   "metadata": {
-    "description": "Vibe-to-Prod: Autonomous production hardening tools for Claude Code",
+    "description": "VibeCheck: Autonomous production hardening tools for Claude Code",
     "version": "1.0.0"
   },
   "plugins": [
     {
-      "name": "v2p",
+      "name": "vibecheck",
       "source": ".",
       "version": "2.0.0",
       "description": "Autonomous production hardening — scan, fix, chaos test, and antifragile score your codebase"

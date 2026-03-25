@@ -109,7 +109,7 @@ function main(): void {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vibe-to-Prod Hardening Report</title>
+<title>VibeCheck Hardening Report</title>
 <style>
   :root { --bg:#0a0a0b; --s:#111113; --s2:#18181b; --b:#27272a; --t:#fafafa; --tm:#a1a1aa; --td:#71717a; --a:#f97316; --g:#22c55e; --r:#ef4444; --bl:#3b82f6; }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -152,7 +152,7 @@ function main(): void {
 <body>
 <div class="c">
   <h1>Hardening Report</h1>
-  <div class="meta">Generated ${new Date().toISOString()} · vibe-to-prod v1.0</div>
+  <div class="meta">Generated ${new Date().toISOString()} · vibecheck v1.0</div>
 
   <h2>Overview</h2>
   <div class="grid">
@@ -218,7 +218,7 @@ function main(): void {
   </table>` : ""}
 
   <div class="footer">
-    <p>Vibe-to-Prod · Autonomous Production Hardening</p>
+    <p>VibeCheck · Autonomous Production Hardening</p>
   </div>
 </div>
 </body>

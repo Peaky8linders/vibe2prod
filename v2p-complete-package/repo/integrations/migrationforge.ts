@@ -38,9 +38,9 @@ interface MFTrustInput {
   migratability_score: number;
   security_score: number;
   review_gate_score: number;
-  v2p_readiness_score?: number;
-  v2p_chaos_resilience?: number;
-  v2p_defect_count?: number;
+  vc_readiness_score?: number;
+  vc_chaos_resilience?: number;
+  vc_defect_count?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,14 +114,14 @@ export function findMigratedCode(mfPath: string, moduleFilter?: string): string[
 }
 
 function runV2PScan(targetPath: string): V2PScanResult | null {
-  const v2pRoot = resolve(__dirname, "..");
-  const scriptPath = resolve(v2pRoot, "scripts/scan-e2e.ts");
+  const vcRoot = resolve(__dirname, "..");
+  const scriptPath = resolve(vcRoot, "scripts/scan-e2e.ts");
   // Use array-form spawn to prevent command injection (no shell: true)
   const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
   const spawnResult = spawnSync(npxCmd, [
     "tsx", scriptPath, "--path", targetPath, "--report",
   ], {
-    cwd: v2pRoot,
+    cwd: vcRoot,
     encoding: "utf-8",
     timeout: 120_000,
     env: { ...process.env, FORCE_COLOR: "0" },
@@ -134,8 +134,8 @@ function runV2PScan(targetPath: string): V2PScanResult | null {
     process.stderr.write(spawnResult.stderr);
   }
 
-  // scan-e2e.ts writes to CWD/reports/, and we run from v2pRoot
-  const reportPath = resolve(v2pRoot, "reports", "scan-e2e-result.json");
+  // scan-e2e.ts writes to CWD/reports/, and we run from vcRoot
+  const reportPath = resolve(vcRoot, "reports", "scan-e2e-result.json");
   if (!existsSync(reportPath)) return null;
 
   return JSON.parse(readFileSync(reportPath, "utf-8")) as V2PScanResult;
@@ -156,7 +156,7 @@ function computeEnhancedTrustScore(
   const reviewGateScore = totalGates > 0 ? (approvedGates / totalGates) * 100 : 50;
 
   // V2P components
-  const v2pReadiness = scanResult.summary.overall_readiness * 100;
+  const vcReadiness = scanResult.summary.overall_readiness * 100;
   const p0Count = scanResult.summary.by_priority["P0"] ?? 0;
   const p1Count = scanResult.summary.by_priority["P1"] ?? 0;
 
@@ -165,17 +165,17 @@ function computeEnhancedTrustScore(
   const securityScore = Math.max(0, 100 - securityDeductions);
 
   const components: MFTrustInput = {
-    migratability_score: v2pReadiness, // Use V2P readiness as migratability proxy
+    migratability_score: vcReadiness, // Use V2P readiness as migratability proxy
     security_score: securityScore,
     review_gate_score: reviewGateScore,
-    v2p_readiness_score: v2pReadiness,
-    v2p_defect_count: scanResult.total_defects,
+    vc_readiness_score: vcReadiness,
+    vc_defect_count: scanResult.total_defects,
   };
 
   // Enhanced composite: MF gates (30%) + V2P readiness (40%) + Security (30%)
   const composite = Math.round(
     reviewGateScore * 0.3 +
-    v2pReadiness * 0.4 +
+    vcReadiness * 0.4 +
     securityScore * 0.3,
   );
 
@@ -217,10 +217,10 @@ function generateIntegrationReport(
     md += `| Metric | Score |\n|---|---|\n`;
     md += `| ${gradeEmoji} **Grade** | **${trustScore.grade}** (${trustScore.composite}/100) |\n`;
     md += `| Verdict | ${trustScore.verdict} |\n`;
-    md += `| V2P Readiness | ${trustScore.components.v2p_readiness_score?.toFixed(1)}% |\n`;
+    md += `| VibeCheck Readiness | ${trustScore.components.vc_readiness_score?.toFixed(1)}% |\n`;
     md += `| Security | ${trustScore.components.security_score}/100 |\n`;
     md += `| Review Gates | ${trustScore.components.review_gate_score.toFixed(0)}% |\n`;
-    md += `| Total Defects | ${trustScore.components.v2p_defect_count} |\n`;
+    md += `| Total Defects | ${trustScore.components.vc_defect_count} |\n`;
   }
 
   md += `\n## Scan Summary\n\n`;
@@ -277,7 +277,7 @@ async function main(): Promise<void> {
   // --module filter reserved for per-module scanning (future use)
   void args.indexOf("--module");
 
-  console.log(`\x1b[35m[v2p×mf]\x1b[0m Post-migration hardening scan\n`);
+  console.log(`\x1b[35m[vibecheck×mf]\x1b[0m Post-migration hardening scan\n`);
 
   // Read MF state if available
   const mfState = readMFState(mfPath);
@@ -290,11 +290,11 @@ async function main(): Promise<void> {
   }
 
   // Run V2P scan
-  console.log(`\n\x1b[35m[v2p×mf]\x1b[0m Running production readiness scan...\n`);
+  console.log(`\n\x1b[35m[vibecheck×mf]\x1b[0m Running production readiness scan...\n`);
   const scanResult = runV2PScan(mfPath);
 
   if (!scanResult) {
-    console.error(`\x1b[31m[v2p×mf]\x1b[0m Scan failed — no results produced`);
+    console.error(`\x1b[31m[vibecheck×mf]\x1b[0m Scan failed — no results produced`);
     process.exit(1);
   }
 
@@ -302,7 +302,7 @@ async function main(): Promise<void> {
   let trustScore: ReturnType<typeof computeEnhancedTrustScore> | null = null;
   if (mfState) {
     trustScore = computeEnhancedTrustScore(mfState, scanResult);
-    console.log(`\x1b[35m[v2p×mf]\x1b[0m Enhanced Trust Score: ${trustScore.grade} (${trustScore.composite}/100)`);
+    console.log(`\x1b[35m[vibecheck×mf]\x1b[0m Enhanced Trust Score: ${trustScore.grade} (${trustScore.composite}/100)`);
     console.log(`  ${trustScore.verdict}`);
   }
 
@@ -310,12 +310,12 @@ async function main(): Promise<void> {
   const report = generateIntegrationReport(mfPath, mfState, scanResult, trustScore);
 
   mkdirSync("reports", { recursive: true });
-  const reportPath = "reports/v2p-migrationforge-report.md";
+  const reportPath = "reports/vibecheck-migrationforge-report.md";
   writeFileSync(reportPath, report);
-  console.log(`\n\x1b[32m[v2p×mf]\x1b[0m Report written to ${reportPath}`);
+  console.log(`\n\x1b[32m[vibecheck×mf]\x1b[0m Report written to ${reportPath}`);
 
   // Summary
-  console.log(`\n\x1b[35m[v2p×mf]\x1b[0m Results:`);
+  console.log(`\n\x1b[35m[vibecheck×mf]\x1b[0m Results:`);
   console.log(`  Files: ${scanResult.files_scanned}`);
   console.log(`  Defects: ${scanResult.total_defects} (${scanResult.summary.by_priority["P0"] ?? 0} P0, ${scanResult.summary.by_priority["P1"] ?? 0} P1)`);
   console.log(`  Readiness: ${(scanResult.summary.overall_readiness * 100).toFixed(1)}%`);

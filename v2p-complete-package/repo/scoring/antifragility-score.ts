@@ -42,7 +42,7 @@ interface ChaosReport {
 function computeRobustness(): { score: number; detail: string } {
   const baselinePath = ".baseline-score";
   if (!existsSync(baselinePath)) {
-    return { score: 0, detail: "No baseline score — run v2p scan + fix first" };
+    return { score: 0, detail: "No baseline score — run vibecheck scan + fix first" };
   }
 
   const baseline = parseFloat(readFileSync(baselinePath, "utf-8").trim());
@@ -58,7 +58,7 @@ function computeRobustness(): { score: number; detail: string } {
 function computeChaosFreshness(): { score: number; detail: string; days_since: number | null } {
   const chaosPath = "logs/chaos-results.json";
   if (!existsSync(chaosPath)) {
-    return { score: 0, detail: "No chaos testing run yet — run v2p chaos", days_since: null };
+    return { score: 0, detail: "No chaos testing run yet — run vibecheck chaos", days_since: null };
   }
 
   const report = JSON.parse(readFileSync(chaosPath, "utf-8")) as ChaosReport;

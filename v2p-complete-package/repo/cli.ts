@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * v2p — Vibe-to-Prod CLI
+ * vibecheck — VibeCheck CLI
  *
  * Usage:
- *   v2p init <path>          Copy project into target/, capture baseline
- *   v2p scan                 Run defect scan, produce taxonomy
- *   v2p eval                 Run full eval harness
- *   v2p score                Show readiness score (--detail for breakdown)
- *   v2p fix                  Run single fix attempt
- *   v2p run <dimension>      Autonomous hardening loop (--hours N)
- *   v2p report               Generate stakeholder HTML report
- *   v2p seal                 Seal eval harness integrity hash
- *   v2p validate-judges      Measure judge precision + recall
- *   v2p status               Quick overview of current state
+ *   vibecheck init <path>          Copy project into target/, capture baseline
+ *   vibecheck scan                 Run defect scan, produce taxonomy
+ *   vibecheck eval                 Run full eval harness
+ *   vibecheck score                Show readiness score (--detail for breakdown)
+ *   vibecheck fix                  Run single fix attempt
+ *   vibecheck run <dimension>      Autonomous hardening loop (--hours N)
+ *   vibecheck report               Generate stakeholder HTML report
+ *   vibecheck seal                 Seal eval harness integrity hash
+ *   vibecheck validate-judges      Measure judge precision + recall
+ *   vibecheck status               Quick overview of current state
  */
 
 import { execSync, spawnSync } from "node:child_process";
@@ -52,7 +52,7 @@ switch (command) {
   case "init": {
     const sourcePath = args[1];
     if (!sourcePath) {
-      console.error(`${RED}Usage: v2p init <path-to-project>${NC}`);
+      console.error(`${RED}Usage: vibecheck init <path-to-project>${NC}`);
       process.exit(1);
     }
     const absSource = resolve(sourcePath);
@@ -83,7 +83,7 @@ switch (command) {
 
     console.log(`\n${GREEN}✓ Initialization complete.${NC}`);
     console.log(`${DIM}Next: review evals/defect-taxonomy.json and adjust priorities.${NC}`);
-    console.log(`${DIM}Then: v2p run security --hours 4${NC}`);
+    console.log(`${DIM}Then: vibecheck run security --hours 4${NC}`);
     break;
   }
 
@@ -170,12 +170,12 @@ switch (command) {
     break;
 
   case "status": {
-    console.log(`${CYAN}Vibe-to-Prod Status${NC}\n`);
+    console.log(`${CYAN}VibeCheck Status${NC}\n`);
 
     // Check target
     const hasTarget = existsSync(resolve(ROOT, "target/package.json")) ||
       existsSync(resolve(ROOT, "target/demo-app/package.json"));
-    console.log(`  Target project:   ${hasTarget ? `${GREEN}loaded${NC}` : `${DIM}empty — run: v2p init <path>${NC}`}`);
+    console.log(`  Target project:   ${hasTarget ? `${GREEN}loaded${NC}` : `${DIM}empty — run: vibecheck init <path>${NC}`}`);
 
     // Check taxonomy
     const taxPath = resolve(ROOT, "evals/defect-taxonomy.json");
@@ -187,7 +187,7 @@ switch (command) {
         .filter((d: any) => d.fixed).length;
       console.log(`  Defects:          ${fixed}/${total} fixed`);
     } else {
-      console.log(`  Defects:          ${DIM}not scanned — run: v2p scan${NC}`);
+      console.log(`  Defects:          ${DIM}not scanned — run: vibecheck scan${NC}`);
     }
 
     // Check logs
@@ -213,7 +213,7 @@ switch (command) {
   }
 
   default:
-    console.log(`${CYAN}v2p${NC} — Vibe-to-Prod: Autonomous Production Hardening\n`);
+    console.log(`${CYAN}vibecheck${NC} — VibeCheck: Autonomous Production Hardening\n`);
     console.log("Commands:");
     console.log(`  ${GREEN}harden${NC} [path]         Zero-config magic wand — scan, fix, report, badge`);
     console.log(`  ${GREEN}init${NC} <path>           Copy project, capture baseline, scan defects`);
@@ -235,10 +235,10 @@ switch (command) {
     console.log(`  ${GREEN}validate-judges${NC}       Measure judge precision + recall`);
     console.log(`  ${GREEN}status${NC}                Quick overview`);
     console.log(`\nQuick start:`);
-    console.log(`  ${DIM}npx v2p harden ../my-app${NC}       # one command, production-ready by morning`);
+    console.log(`  ${DIM}npx vibecheck harden ../my-app${NC}       # one command, production-ready by morning`);
     console.log(`\n${DIM}Full workflow:${NC}`);
-    console.log(`  v2p init ../my-prototype`);
-    console.log(`  v2p score --detail`);
-    console.log(`  v2p run security --hours 4`);
-    console.log(`  v2p launch-report`);
+    console.log(`  vibecheck init ../my-prototype`);
+    console.log(`  vibecheck score --detail`);
+    console.log(`  vibecheck run security --hours 4`);
+    console.log(`  vibecheck launch-report`);
 }

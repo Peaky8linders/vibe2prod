@@ -1,5 +1,5 @@
 {
-  "name": "v2p",
+  "name": "vibecheck",
   "version": "2.0.0",
   "description": "Autonomous production hardening — transforms vibe-coded prototypes into production-grade software. Antifragile: your app gets stronger from every attack.",
   "author": {
@@ -8,11 +8,11 @@
   },
   "repository": "https://github.com/Peaky8linders/vibe2prod",
   "license": "MIT",
-  "keywords": ["security", "hardening", "production", "antifragile", "evals", "vibe-coding"],
+  "keywords": ["security", "hardening", "production", "antifragile", "evals", "vibe-coding", "vibecheck"],
   "mcpServers": {
-    "v2p": {
+    "vibecheck": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/servers/v2p-server.js"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/servers/vibecheck-server.js"]
     }
   }
 }

@@ -353,7 +353,7 @@ function generateReportHTML(data: ReturnType<typeof loadData>): string {
 
   <!-- FOOTER -->
   <div class="footer">
-    <p><span class="brand">V2P</span> — Autonomous Production Hardening · vibe-to-prod v1.0</p>
+    <p><span class="brand">V2P</span> — Autonomous Production Hardening · vibecheck v1.0</p>
     <p>This report was generated automatically. All findings are based on static analysis and AI-powered evaluation. Manual review is recommended for critical systems.</p>
   </div>
 
