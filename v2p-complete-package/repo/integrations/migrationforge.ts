@@ -115,15 +115,16 @@ export function findMigratedCode(mfPath: string, moduleFilter?: string): string[
 
 function runV2PScan(targetPath: string): V2PScanResult | null {
   const v2pRoot = resolve(__dirname, "..");
-  // Quote paths to handle spaces (e.g., "D:\Claude Projects\...")
   const scriptPath = resolve(v2pRoot, "scripts/scan-e2e.ts");
-  const cmd = `npx tsx "${scriptPath}" --path "${targetPath}" --report`;
-  const spawnResult = spawnSync(cmd, [], {
+  // Use array-form spawn to prevent command injection (no shell: true)
+  const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
+  const spawnResult = spawnSync(npxCmd, [
+    "tsx", scriptPath, "--path", targetPath, "--report",
+  ], {
     cwd: v2pRoot,
     encoding: "utf-8",
     timeout: 120_000,
     env: { ...process.env, FORCE_COLOR: "0" },
-    shell: true,
   });
 
   if (spawnResult.stdout) {

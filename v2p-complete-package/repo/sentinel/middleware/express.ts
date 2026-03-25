@@ -16,7 +16,7 @@
  *   - Configurable field blocklist
  */
 
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { appendFileSync, mkdirSync, existsSync } from "node:fs";
 // Express types inlined to avoid dependency on @types/express in the V2P system.
 // The sentinel middleware runs in the TARGET app which has Express installed.
@@ -97,8 +97,11 @@ function redactPayload(
   return result;
 }
 
+// Per-process random salt — never hardcoded, never shared
+const IP_SALT = randomBytes(16).toString("hex");
+
 function hashIp(ip: string): string {
-  return createHash("sha256").update(ip + "v2p-salt").digest("hex").slice(0, 12);
+  return createHash("sha256").update(ip + IP_SALT).digest("hex").slice(0, 12);
 }
 
 // ---------------------------------------------------------------------------
@@ -109,6 +112,7 @@ class EventWriter {
   private buffer: SentinelEvent[] = [];
   private readonly outputPath: string;
   private readonly bufferSize: number;
+  private static readonly MAX_BUFFER = 1000; // Cap to prevent OOM
 
   constructor(outputPath: string, bufferSize: number) {
     this.outputPath = outputPath;
@@ -122,6 +126,10 @@ class EventWriter {
   }
 
   write(event: SentinelEvent): void {
+    // Drop oldest events if buffer exceeds cap (prevents OOM under sustained attack)
+    if (this.buffer.length >= EventWriter.MAX_BUFFER) {
+      this.buffer.splice(0, this.buffer.length - EventWriter.MAX_BUFFER + 1);
+    }
     this.buffer.push(event);
     if (this.buffer.length >= this.bufferSize) {
       this.flush();
@@ -131,7 +139,12 @@ class EventWriter {
   flush(): void {
     if (this.buffer.length === 0) return;
     const lines = this.buffer.map((e) => JSON.stringify(e)).join("\n") + "\n";
-    appendFileSync(this.outputPath, lines);
+    try {
+      appendFileSync(this.outputPath, lines);
+    } catch {
+      // Disk full or permission denied — drop events rather than crash host app
+      process.stderr.write(`[v2p-sentinel] Failed to write events to ${this.outputPath}\n`);
+    }
     this.buffer = [];
   }
 }
@@ -151,10 +164,10 @@ export function v2pSentinel(options: SentinelOptions = {}): Array<
   const redactFields = [...DEFAULT_REDACT_FIELDS, ...(options.redact ?? [])];
   const writer = new EventWriter(outputPath, options.bufferSize ?? 10);
 
-  // Flush on process exit
+  // Flush on process exit — use once() to not hijack host app's signal handlers
   process.on("exit", () => writer.flush());
-  process.on("SIGINT", () => { writer.flush(); process.exit(0); });
-  process.on("SIGTERM", () => { writer.flush(); process.exit(0); });
+  process.once("SIGINT", () => writer.flush());
+  process.once("SIGTERM", () => writer.flush());
 
   // Request tracking middleware
   const requestMiddleware = (req: Request, res: Response, next: NextFunction): void => {
