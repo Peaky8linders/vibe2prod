@@ -116,7 +116,7 @@ function scanFileForDefects(filePath: string, content: string, lines: string[], 
 
 function scanTsJsFile(_filePath: string, content: string, lines: string[]): FileDefect[] {
   const defects: FileDefect[] = [];
-  const isTestFile = /\.test\.|\.spec\.|__tests__/.test(_filePath);
+  const isTestFile = /\.test\.|\.spec\.|__tests__|dev[-_]server|\.dev\.|mock/.test(_filePath);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
@@ -267,11 +267,53 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
       });
     }
 
+    // (Rate limiting check moved to file-level to avoid per-endpoint duplication)
+
+    // --- SECURITY: SSRF prevention (P0) ---
+
+    // fetch/axios with user-controlled URL
+    if (/\b(?:fetch|axios\.(?:get|post|put|delete|request))\s*\(/.test(line) && !isTestFile) {
+      const urlArg = line.match(/(?:fetch|axios\.\w+)\s*\(\s*([^,)]+)/)?.[1] ?? "";
+      if (/req\.(query|params|body)|userInput|url\b/.test(urlArg) && !/new URL|URL\.parse|allowlist|whitelist|ALLOWED/.test(lines.slice(Math.max(0, i - 5), i + 5).join("\n"))) {
+        defects.push({
+          id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
+          description: "SSRF risk — fetch/axios with user-controlled URL",
+          fix_hint: "Validate URL against allowlist: const parsed = new URL(url); if (!ALLOWED_HOSTS.includes(parsed.hostname)) throw new Error('Blocked');",
+          code_snippet: line.trim().slice(0, 80),
+        });
+      }
+    }
+
+    // --- SECURITY: Secrets in env defaults (P0) ---
+
+    if (!isTestFile && /process\.env\.\w+\s*(?:\?\?|\|\|)\s*['"][^'"]{8,}['"]/.test(line)) {
+      // Skip if it's clearly a placeholder like 'development' or 'localhost'
+      const defaultVal = line.match(/(?:\?\?|\|\|)\s*['"]([^'"]+)['"]/)?.[1] ?? "";
+      if (!/localhost|development|test|example|placeholder|default/i.test(defaultVal)) {
+        defects.push({
+          id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
+          description: "Hardcoded secret in environment variable fallback",
+          fix_hint: "Remove fallback or fail loudly: const val = process.env.SECRET; if (!val) throw new Error('SECRET env var required');",
+          code_snippet: line.trim().slice(0, 80),
+        });
+      }
+    }
+
+    // --- SECURITY: Open redirect (P1) ---
+
+    if (/res\.redirect\s*\(/.test(line) && /req\.(query|params|body)/.test(line) && !isTestFile) {
+      defects.push({
+        id: nextId("SEC"), dimension: "security", priority: "P1", line: lineNum,
+        description: "Open redirect — user input in res.redirect()",
+        fix_hint: "Validate redirect URL: const url = new URL(target, req.headers.origin); if (url.origin !== req.headers.origin) return res.status(400).json({ error: 'Invalid redirect' });",
+      });
+    }
+
     // --- DATA INTEGRITY ---
 
     // Missing transaction for multi-step DB operations
     if (/await\s+(?:db|pool|client)\.query/.test(line)) {
-      const blockAhead = lines.slice(i, Math.min(i + 10, lines.length)).join("\n");
+      const blockAhead = lines.slice(i, Math.min(i + 15, lines.length)).join("\n");
       const queryCount = (blockAhead.match(/\.query/g) || []).length;
       if (queryCount >= 2 && !/BEGIN|transaction|COMMIT/.test(blockAhead)) {
         defects.push({
@@ -280,6 +322,16 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
           fix_hint: "Wrap in transaction: const client = await pool.connect(); try { await client.query('BEGIN'); ... await client.query('COMMIT'); } catch { await client.query('ROLLBACK'); }",
         });
       }
+    }
+
+    // --- DATA INTEGRITY: Unbounded queries (P1) ---
+
+    if (/SELECT\s+\*\s+FROM\s+\w+/i.test(line) && !/LIMIT|WHERE|OFFSET/i.test(line) && !isTestFile) {
+      defects.push({
+        id: nextId("DI"), dimension: "data-integrity", priority: "P1", line: lineNum,
+        description: "Unbounded SELECT * — no LIMIT clause, may return millions of rows",
+        fix_hint: "Add LIMIT: SELECT * FROM table WHERE ... LIMIT 100",
+      });
     }
   }
 
@@ -301,6 +353,34 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
       id: nextId("SEC"), dimension: "security", priority: "P1", line: null,
       description: "Stack trace exposed in API response",
       fix_hint: "Return generic error: res.status(500).json({ error: 'Internal server error' }). Log details server-side.",
+    });
+  }
+
+  // Missing rate limiting on mutation endpoints (file-level, fires once)
+  if (/(?:app|router)\.(post|put|patch|delete)/.test(content) &&
+      !/rateLimit|RateLimit|rate[_-]?limit|limiter|throttle/.test(content) && !isTestFile) {
+    defects.push({
+      id: nextId("SEC"), dimension: "security", priority: "P1", line: null,
+      description: "No rate limiting on mutation endpoints — resource exhaustion risk",
+      fix_hint: "Add: import rateLimit from 'express-rate-limit'; app.use('/api/', rateLimit({ windowMs: 15*60*1000, max: 100 }))",
+    });
+  }
+
+  // Missing security headers (Helmet)
+  if (/(?:app|express)\s*\(/.test(content) && !/helmet|security.*header/i.test(content) && !isTestFile) {
+    defects.push({
+      id: nextId("SEC"), dimension: "security", priority: "P1", line: null,
+      description: "No security headers middleware (helmet) detected",
+      fix_hint: "Add: import helmet from 'helmet'; app.use(helmet());",
+    });
+  }
+
+  // Missing request body size limit
+  if (/express\.json\s*\(\s*\)/.test(content) && !/limit/.test(content) && !isTestFile) {
+    defects.push({
+      id: nextId("SEC"), dimension: "security", priority: "P1", line: null,
+      description: "express.json() without body size limit — memory exhaustion risk",
+      fix_hint: "Add limit: app.use(express.json({ limit: '1mb' }))",
     });
   }
 
@@ -368,6 +448,93 @@ function scanPythonFile(_filePath: string, _content: string, lines: string[]): F
         });
       }
     }
+
+    // Dangerous builtins: eval/exec/__import__
+    if (!isPyTestFile && /\b(?:eval|exec)\s*\(/.test(line) && !/^\s*#/.test(line)) {
+      defects.push({
+        id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
+        description: "eval()/exec() — arbitrary code execution risk",
+        fix_hint: "Replace with ast.literal_eval() for data parsing or a safe alternative.",
+      });
+    }
+
+    // pickle.loads on potentially untrusted data
+    if (!isPyTestFile && /pickle\.loads?\s*\(/.test(line)) {
+      defects.push({
+        id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
+        description: "pickle.load() — deserialization of untrusted data can execute arbitrary code",
+        fix_hint: "Use json.loads() or a safe serialization format instead of pickle.",
+      });
+    }
+
+    // DEBUG = True in non-test files
+    if (!isPyTestFile && /DEBUG\s*=\s*True/.test(line) && !/test|conftest/.test(_filePath)) {
+      defects.push({
+        id: nextId("SEC"), dimension: "security", priority: "P1", line: lineNum,
+        description: "DEBUG = True in production code",
+        fix_hint: "Use: DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'",
+      });
+    }
+
+    // Exception swallowing: except ... pass
+    if (/^\s*except\s+\w+.*:/.test(line)) {
+      const nextLine = lines[i + 1]?.trim() ?? "";
+      if (nextLine === "pass" || nextLine === "...") {
+        defects.push({
+          id: nextId("EH"), dimension: "error-handling", priority: "P1", line: lineNum,
+          description: "Exception swallowed with pass/... — errors will be invisible",
+          fix_hint: "Log the error: except ValueError as e: logger.error('Context: %s', e)",
+        });
+      }
+    }
+
+    // HTTP requests without timeout
+    if (!isPyTestFile && /requests\.(get|post|put|patch|delete)\s*\(/.test(line)) {
+      const callBlock = lines.slice(i, Math.min(i + 3, lines.length)).join("\n");
+      if (!/timeout/.test(callBlock)) {
+        defects.push({
+          id: nextId("EH"), dimension: "error-handling", priority: "P1", line: lineNum,
+          description: "HTTP request without timeout — may hang indefinitely",
+          fix_hint: "Add timeout: requests.get(url, timeout=10)",
+        });
+      }
+    }
+
+    // print() in production code — only flag in API/service modules, not CLI scripts
+    if (!isPyTestFile && /\bprint\s*\(/.test(line) && !/^\s*#/.test(line) &&
+        !/cli|__main__|manage\.py|scripts[/\\]|pipeline[/\\]|__init__/.test(_filePath) &&
+        /(?:api|routes|views|services|handlers|middleware)[/\\]/i.test(_filePath)) {
+      defects.push({
+        id: nextId("OB"), dimension: "observability", priority: "P2", line: lineNum,
+        description: "print() in production code — use structured logging",
+        fix_hint: "Replace with: logger.info('message', extra={'key': value})",
+      });
+    }
+
+    // Secrets in env defaults (Python)
+    if (!isPyTestFile && /os\.environ\.get\s*\(\s*['"][^'"]+['"]\s*,\s*['"][^'"]{8,}['"]/.test(line)) {
+      const defaultVal = line.match(/,\s*['"]([^'"]+)['"]/)?.[1] ?? "";
+      if (!/localhost|development|test|example|placeholder|default/i.test(defaultVal)) {
+        defects.push({
+          id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
+          description: "Hardcoded secret in os.environ.get() fallback",
+          fix_hint: "Remove fallback: os.environ['SECRET'] (will raise KeyError if not set)",
+          code_snippet: line.trim().slice(0, 80),
+        });
+      }
+    }
+  }
+
+  // File-level: missing test file — only flag API/service modules, not scripts/CLI
+  if (!isPyTestFile && /def\s+\w+/.test(_content) &&
+      !/test_|conftest|__init__|__main__|scripts[/\\]|cli/.test(_filePath) &&
+      /(?:api|routes|views|services|handlers|models)[/\\]/i.test(_filePath)) {
+    const testPath = _filePath.replace(/\.py$/, "").replace(/([^/\\]+)$/, "test_$1.py");
+    defects.push({
+      id: nextId("IV"), dimension: "input-validation", priority: "P3", line: null,
+      description: `No test file found (expected ${testPath.split(/[/\\]/).pop()})`,
+      fix_hint: "Create a test file with at least one test per public function.",
+    });
   }
 
   return defects;
