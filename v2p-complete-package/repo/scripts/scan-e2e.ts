@@ -102,6 +102,16 @@ function nextId(prefix: string): string {
 // File-Level Scanners
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Plugin Scanner Integration
+// ---------------------------------------------------------------------------
+
+import { complianceScanner } from "../scanners/compliance-scanner.js";
+import { governanceScanner } from "../scanners/governance-scanner.js";
+import type { ScannerPlugin } from "../scanners/plugin-interface.js";
+
+const SCANNER_PLUGINS: ScannerPlugin[] = [complianceScanner, governanceScanner];
+
 function scanFileForDefects(filePath: string, content: string, lines: string[], lang: "typescript" | "javascript" | "python" | "other"): FileDefect[] {
   const defects: FileDefect[] = [];
 
@@ -109,6 +119,21 @@ function scanFileForDefects(filePath: string, content: string, lines: string[], 
     defects.push(...scanPythonFile(filePath, content, lines));
   } else if (lang === "typescript" || lang === "javascript") {
     defects.push(...scanTsJsFile(filePath, content, lines));
+  }
+
+  // Run plugin scanners
+  for (const plugin of SCANNER_PLUGINS) {
+    const pluginDefects = plugin.scan(filePath, content, lang);
+    defects.push(...pluginDefects.map((d) => ({
+      ...d,
+      id: d.id,
+      dimension: d.dimension,
+      priority: d.priority as "P0" | "P1" | "P2" | "P3",
+      line: d.line,
+      description: d.description,
+      fix_hint: d.fix_hint,
+      code_snippet: d.code_snippet,
+    })));
   }
 
   return defects;

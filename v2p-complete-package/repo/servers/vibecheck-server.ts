@@ -296,6 +296,38 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
+// Tool: vc_comply — Compliance readiness assessment
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "vc_comply",
+  "Full compliance readiness assessment: security + AI governance + evidence chain. Produces A-F grade.",
+  {
+    path: z.string().optional().describe("Path to project to assess (default: target/)"),
+    report: z.boolean().optional().describe("Generate markdown compliance report"),
+  },
+  async ({ path, report }) => {
+    const args: string[] = [];
+    if (path) args.push("--path", validatePath(path, "vc_comply"));
+    if (report) args.push("--report");
+    return formatResult(runTsx("scripts/comply.ts", args));
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Tool: vc_evidence_verify — Evidence chain integrity verification
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "vc_evidence_verify",
+  "Verify the tamper-proof evidence chain integrity. Returns chain status and entry count.",
+  {},
+  async () => {
+    return formatResult(runTsx("scripts/evidence-verify.ts", []));
+  },
+);
+
+// ---------------------------------------------------------------------------
 // Tool: vc_analyze — Error analysis of hardening loop
 // ---------------------------------------------------------------------------
 
