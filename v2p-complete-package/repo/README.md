@@ -1,14 +1,18 @@
 # Vibe-to-Prod
 
-**Autonomous production hardening for vibe-coded projects.**
+**Your app doesn't just survive attacks — it gets stronger from them.**
 
-Takes your working-but-fragile prototype and systematically hardens it into production-grade software — one atomic commit at a time, overnight, while you sleep.
+Autonomous production hardening that takes your working-but-fragile prototype and systematically hardens it into production-grade software. Scans every file, finds every defect, generates actionable fix prompts you can paste into Claude Code or Codex.
 
+```bash
+# Scan any project — get a full production readiness report
+npx tsx cli.ts scan:e2e --path ../my-app --report
+
+# Or use as a Claude Code MCP server
+npx tsx servers/v2p-server.ts
 ```
-v2p init ../my-prototype     # scan it
-v2p run security --hours 4   # harden it
-v2p report                   # see what changed
-```
+
+> **Security scanners tell you what's broken. V2P fixes it while you sleep.**
 
 ---
 
@@ -44,7 +48,7 @@ LOOP    →  Repeat overnight. Morning: review commit log + readiness score.
 The repo ships with a deliberately vibe-coded Express task API full of real-world production defects (SQL injection, hardcoded secrets, no auth, no error handling, no tests).
 
 ```bash
-git clone https://github.com/yourorg/vibe-to-prod.git
+git clone https://github.com/Peaky8linders/vibe2prod.git
 cd vibe-to-prod
 npm install
 
@@ -181,20 +185,98 @@ The `deploy/` directory contains production infrastructure templates — the **t
 | Open P0s | 0 | Any P0 caps score at 50% |
 | Behavioral Preservation | 100% | Any regression = auto-revert |
 
+## E2E Scanner
+
+The scanner runs file-by-file analysis with **37+ rules** across TypeScript/JavaScript and Python, producing per-file readiness scores and actionable fix prompts.
+
+```bash
+npx tsx scripts/scan-e2e.ts --path ../your-project --report
+```
+
+**Output:**
+- `reports/scan-e2e-report.md` — human-readable report with remediation plan
+- `reports/scan-e2e-result.json` — machine-readable results
+- Actionable fix prompts per dimension (copy into Claude Code/Codex)
+
+**What it catches:**
+
+| Category | P0 (Critical) | P1 (Must Fix) |
+|---|---|---|
+| Security | SQL injection, SSRF, hardcoded secrets, eval/exec, pickle, secrets in env defaults | CORS wildcard, missing auth, open redirect, rate limiting, helmet, body size limit |
+| Error Handling | — | External calls without try/catch, empty catches, exception swallowing, missing timeouts |
+| Input Validation | — | Mutation endpoints without schema validation, FastAPI without Pydantic |
+| Data Integrity | — | Multiple queries without transactions, unbounded SELECT * |
+| Observability | — | No structured logging, console.log in production |
+
+**Zero false positives** verified against real-world codebases (101+ files).
+
+## MCP Server (Claude Code Plugin)
+
+Install as a Claude Code MCP server to use V2P tools directly in your editor:
+
+```json
+{
+  "mcpServers": {
+    "v2p": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/v2p/servers/v2p-server.ts"]
+    }
+  }
+}
+```
+
+**14 tools available:** `v2p_scan`, `v2p_scan_e2e`, `v2p_fix`, `v2p_eval`, `v2p_score`, `v2p_chaos`, `v2p_subtract`, `v2p_learn`, `v2p_harden_post_migration`, `v2p_analyze`, `v2p_report`, and more.
+
+## Antifragile Architecture
+
+V2P doesn't just produce **robust** systems (withstand known attacks) — it produces **antifragile** systems (get stronger from every attack):
+
+```
+HARDEN  →  Scan → Fix → Eval Gate → Commit/Revert
+   ↓
+CHAOS   →  Adversarial probes against hardened endpoints (346 probes)
+   ↓
+DEPLOY  →  Hardened + chaos-tested code → Production
+   ↓
+SENTINEL → Captures blocked attacks, auth failures, anomalies
+   ↓
+LEARN   →  Production signals → New defects → New eval judges
+   ↓
+  └──── back to HARDEN (continuous improvement cycle)
+```
+
+| Component | Command | What it does |
+|---|---|---|
+| Chaos Testing | `v2p chaos` | 346 adversarial probes: fuzzing, injection replay, auth bypass, dependency failure |
+| Via Negativa | `v2p subtract` | Finds attack surface to REMOVE: dead endpoints, unused deps, broad permissions |
+| Sentinel | `app.use(v2pSentinel())` | Production middleware that captures security events for the feedback loop |
+| Antifragility Score | `v2p score --antifragile` | Three-component score: Robustness + Chaos Resilience + Production Adaptation |
+
 ## CLI Reference
 
 ```
-v2p init <path>           Copy project, capture baseline, scan defects
-v2p scan [--llm]          Run defect scanner (add --llm for deep analysis)
-v2p eval                  Run full eval harness
-v2p score [--detail]      Show readiness score
-v2p fix                   Run single fix attempt
-v2p run <dim> [--hours N] Autonomous hardening loop
-v2p report                Generate stakeholder HTML report
-v2p seal                  Seal eval harness integrity hash
-v2p validate-judges       Measure judge precision + recall
-v2p status                Quick overview of current state
+v2p init <path>              Copy project, capture baseline, scan defects
+v2p scan [--llm]             Run defect scanner (add --llm for deep analysis)
+v2p scan:e2e --path <p>      End-to-end file-by-file scan with fix prompts
+v2p eval                     Run full eval harness
+v2p score [--detail]         Show readiness score
+v2p score --antifragile      Three-component antifragility score
+v2p fix                      Run single fix attempt
+v2p run <dim> [--hours N]    Autonomous hardening loop
+v2p chaos                    Run adversarial probes against hardened code
+v2p subtract                 Via negativa — find attack surface to remove
+v2p learn                    Process production signals into new defects
+v2p harden:post-migration    Post-migration hardening with trust score
+v2p report                   Generate stakeholder HTML report
+v2p judges:audit             Judge accuracy vs production outcomes
 ```
+
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feat/my-feature`
+3. One defect per commit: `fix(<dimension>): <defect-id> — <description>`
+4. Open a PR
 
 ## License
 

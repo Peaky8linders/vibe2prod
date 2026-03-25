@@ -26,7 +26,21 @@ const ROOT = resolve(__dirname, "..");
 
 /** Strip ANSI escape codes from output — Claude doesn't render them */
 function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, "");
+  return str.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "").replace(/\x1b\][^\x07]*\x07/g, "");
+}
+
+/** Validate that a user-supplied path doesn't escape expected boundaries */
+function validatePath(inputPath: string, label: string): string {
+  const resolved = resolve(inputPath);
+  // Block system directories and sensitive paths
+  const blocked = ["/etc", "/var", "/usr", "/bin", "/sbin", "/root",
+    "C:\\Windows", "C:\\Program Files", "C:\\ProgramData"];
+  for (const b of blocked) {
+    if (resolved.toLowerCase().startsWith(b.toLowerCase())) {
+      throw new Error(`${label}: path '${resolved}' is in a protected system directory`);
+    }
+  }
+  return resolved;
 }
 
 /** Run a tsx script and return stdout/stderr */
@@ -184,7 +198,7 @@ server.tool(
 server.tool(
   "v2p_fix",
   "Run a single atomic fix attempt. Applies a fix, runs eval gates, commits if all pass or reverts if any fail.",
-  { defect_id: z.string().optional().describe("Specific defect ID to fix (e.g. SEC-001)") },
+  { defect_id: z.string().regex(/^[A-Z]{2,4}-\d{1,4}$/).optional().describe("Specific defect ID to fix (e.g. SEC-001)") },
   async ({ defect_id }) => {
     const args = defect_id ? [defect_id] : [];
     return formatResult(runBash("scripts/run-fix.sh", args));
@@ -237,7 +251,7 @@ server.tool(
   },
   async ({ from, merge }) => {
     const args: string[] = [];
-    if (from) args.push("--from", from);
+    if (from) args.push("--from", validatePath(from, "v2p_learn"));
     if (merge) args.push("--merge");
     return formatResult(runTsx("sentinel/learn.ts", args));
   },
@@ -256,7 +270,7 @@ server.tool(
   },
   async ({ path, prompts }) => {
     const args = ["--report"];
-    if (path) args.push("--path", path);
+    if (path) args.push("--path", validatePath(path, "v2p_scan_e2e"));
     if (prompts) args.push("--prompts");
     return formatResult(runTsx("scripts/scan-e2e.ts", args));
   },
@@ -274,7 +288,8 @@ server.tool(
     module: z.string().optional().describe("Scan a specific module only"),
   },
   async ({ path, module }) => {
-    const args = ["--path", path];
+    const validPath = validatePath(path, "v2p_harden_post_migration");
+    const args = ["--path", validPath];
     if (module) args.push("--module", module);
     return formatResult(runTsx("integrations/migrationforge.ts", args));
   },
