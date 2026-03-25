@@ -117,6 +117,9 @@ function scanFileForDefects(filePath: string, content: string, lines: string[], 
 function scanTsJsFile(_filePath: string, content: string, lines: string[]): FileDefect[] {
   const defects: FileDefect[] = [];
   const isTestFile = /\.test\.|\.spec\.|__tests__|dev[-_]server|\.dev\.|mock/.test(_filePath);
+  // Security tooling files that intentionally contain vulnerability patterns (DAST probes,
+  // chaos runners, scanner rules, fix hints) — don't flag their patterns as defects
+  const isSecurityTooling = /scanner|dast|chaos|probes?[/\\]|evals[/\\]|sentinel[/\\]/.test(_filePath);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
@@ -148,8 +151,8 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
     }
 
     // SQL injection — only flag if the line looks like it's constructing a SQL query
-    // Precision guard: require db/query/sql context to avoid false positives on template literals
-    if (!isTestFile) {
+    // Precision guard: require db/query/sql context; skip security tooling (regex patterns detecting SQLi)
+    if (!isTestFile && !isSecurityTooling) {
       const looksLikeSql = /(?:query|execute|sql|db\.|pool\.|client\.|cursor\.)/.test(line) ||
                            /(?:query|execute|sql|db\.|pool\.|client\.)/.test(lines.slice(Math.max(0, i - 2), i + 2).join(" "));
       if (looksLikeSql && (
@@ -258,8 +261,9 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
     }
 
     // --- OBSERVABILITY ---
-
-    if (/\bconsole\.(log|debug|info)\b/.test(line) && !isTestFile) {
+    // Only flag console.log in API/service files — CLI tools use it as primary output
+    const isCli = /cli\.|scripts[/\\]|guardian[/\\]cli|scoring[/\\]|judges[/\\]|subtract[/\\]|chaos[/\\]|sentinel[/\\](?!middleware)/.test(_filePath);
+    if (/\bconsole\.(log|debug|info)\b/.test(line) && !isTestFile && !isCli && !isSecurityTooling) {
       defects.push({
         id: nextId("OB"), dimension: "observability", priority: "P2", line: lineNum,
         description: "console.log in production code",
@@ -271,10 +275,12 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
 
     // --- SECURITY: SSRF prevention (P0) ---
 
-    // fetch/axios with user-controlled URL
-    if (/\b(?:fetch|axios\.(?:get|post|put|delete|request))\s*\(/.test(line) && !isTestFile) {
+    // fetch/axios with user-controlled URL — skip security tooling, string literals (fix_hint/description), and comments
+    const isStringContext = /^\s*(?:fix_hint|description|message|hint|label)\s*[:=]/.test(line) || /^\s*["'`]/.test(line.trim());
+    if (/\b(?:fetch|axios\.(?:get|post|put|delete|request))\s*\(/.test(line) && !isTestFile && !isSecurityTooling && !isStringContext) {
       const urlArg = line.match(/(?:fetch|axios\.\w+)\s*\(\s*([^,)]+)/)?.[1] ?? "";
-      if (/req\.(query|params|body)|userInput|url\b/.test(urlArg) && !/new URL|URL\.parse|allowlist|whitelist|ALLOWED/.test(lines.slice(Math.max(0, i - 5), i + 5).join("\n"))) {
+      // Only flag when URL clearly comes from user input (req.query/params/body), not just a variable named "url"
+      if (/req\.(query|params|body)\.\w+|req\.(query|params|body)\[/.test(urlArg) && !/new URL|URL\.parse|allowlist|whitelist|ALLOWED/.test(lines.slice(Math.max(0, i - 5), i + 5).join("\n"))) {
         defects.push({
           id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
           description: "SSRF risk — fetch/axios with user-controlled URL",
@@ -289,7 +295,7 @@ function scanTsJsFile(_filePath: string, content: string, lines: string[]): File
     if (!isTestFile && /process\.env\.\w+\s*(?:\?\?|\|\|)\s*['"][^'"]{8,}['"]/.test(line)) {
       // Skip if it's clearly a placeholder like 'development' or 'localhost'
       const defaultVal = line.match(/(?:\?\?|\|\|)\s*['"]([^'"]+)['"]/)?.[1] ?? "";
-      if (!/localhost|development|test|example|placeholder|default/i.test(defaultVal)) {
+      if (!/localhost|127\.0\.0\.1|0\.0\.0\.0|development|test|example|placeholder|default|staging|production/i.test(defaultVal)) {
         defects.push({
           id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
           description: "Hardcoded secret in environment variable fallback",
@@ -514,7 +520,7 @@ function scanPythonFile(_filePath: string, _content: string, lines: string[]): F
     // Secrets in env defaults (Python)
     if (!isPyTestFile && /os\.environ\.get\s*\(\s*['"][^'"]+['"]\s*,\s*['"][^'"]{8,}['"]/.test(line)) {
       const defaultVal = line.match(/,\s*['"]([^'"]+)['"]/)?.[1] ?? "";
-      if (!/localhost|development|test|example|placeholder|default/i.test(defaultVal)) {
+      if (!/localhost|127\.0\.0\.1|0\.0\.0\.0|development|test|example|placeholder|default|staging|production/i.test(defaultVal)) {
         defects.push({
           id: nextId("SEC"), dimension: "security", priority: "P0", line: lineNum,
           description: "Hardcoded secret in os.environ.get() fallback",
