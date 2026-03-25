@@ -11,7 +11,7 @@ export function ScoreRing({ score, label }: { score: number; label: string }) {
     <div className="p-6 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] flex flex-col items-center">
       <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider mb-4">{label}</p>
       <div className="relative w-40 h-40">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100" role="img" aria-label={`${label}: ${pct}%, Grade ${grade}`}>
           {/* Background ring */}
           <circle cx="50" cy="50" r="45" fill="none" stroke="var(--color-border)" strokeWidth="6" />
           {/* Score ring */}

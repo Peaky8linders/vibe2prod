@@ -53,7 +53,7 @@ export function ActionPrompts() {
             </div>
             <button
               onClick={() => handleCopy(p.dimension, p.prompt)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]"
               style={{
                 borderColor: copied === p.dimension ? "var(--color-accent-green)" : "var(--color-border)",
                 color: copied === p.dimension ? "var(--color-accent-green)" : "var(--color-text-secondary)",

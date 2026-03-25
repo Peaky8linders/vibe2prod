@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { clsx } from "clsx";
 
 type Tab = "overview" | "files" | "store" | "antifragile";
@@ -12,51 +13,84 @@ const NAV_ITEMS: { id: Tab; label: string; icon: string }[] = [
 ];
 
 export function Sidebar({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (tab: Tab) => void }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
-    <aside className="w-64 bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)] flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-[var(--color-border)]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[var(--color-accent-green)] to-[var(--color-accent-cyan)] flex items-center justify-center">
-            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight">VibeCheck</h1>
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest">Production Hardening</p>
+    <>
+      {/* Mobile hamburger */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border)] flex items-center justify-center"
+        aria-label="Open navigation"
+      >
+        <svg className="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      </button>
+
+      {/* Backdrop */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={clsx(
+        "bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)] flex flex-col",
+        // Desktop: always visible, fixed width
+        "lg:w-64 lg:relative lg:translate-x-0",
+        // Mobile: slide-over drawer
+        "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300",
+        mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
+        {/* Logo */}
+        <div className="p-6 border-b border-[var(--color-border)]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[var(--color-accent-green)] to-[var(--color-accent-cyan)] flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight">VibeCheck</h1>
+              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-widest">Production Hardening</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onTabChange(item.id)}
-            className={clsx(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-              activeTab === item.id
-                ? "bg-[var(--color-accent-green)]/10 text-[var(--color-accent-green)] glow-green"
-                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)]"
-            )}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-            </svg>
-            {item.label}
-          </button>
-        ))}
-      </nav>
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1" role="navigation" aria-label="Main navigation">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => { onTabChange(item.id); setMobileOpen(false); }}
+              className={clsx(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]",
+                activeTab === item.id
+                  ? "bg-[var(--color-accent-green)]/10 text-[var(--color-accent-green)] glow-green"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)]"
+              )}
+              aria-current={activeTab === item.id ? "page" : undefined}
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+              </svg>
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
-      {/* Bottom CTA */}
-      <div className="p-4 border-t border-[var(--color-border)]">
-        <div className="p-3 rounded-lg bg-gradient-to-br from-[var(--color-accent-green)]/5 to-[var(--color-accent-blue)]/5 border border-[var(--color-accent-green)]/20">
-          <p className="text-xs font-medium text-[var(--color-accent-green)]">Pro Tip</p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Run <code className="text-[var(--color-accent-cyan)] font-mono">vibecheck scan:e2e</code> to get live results here.</p>
+        {/* Bottom CTA */}
+        <div className="p-4 border-t border-[var(--color-border)]">
+          <div className="p-3 rounded-lg bg-gradient-to-br from-[var(--color-accent-green)]/5 to-[var(--color-accent-blue)]/5 border border-[var(--color-accent-green)]/20">
+            <p className="text-xs font-medium text-[var(--color-accent-green)]">Pro Tip</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Run <code className="text-[var(--color-accent-cyan)] font-mono">vibecheck scan:e2e</code> to get live results here.</p>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
