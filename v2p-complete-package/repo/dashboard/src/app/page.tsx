@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { ScoreRing } from "@/components/score-ring";
 import { DefectChart } from "@/components/defect-chart";
@@ -51,30 +51,70 @@ const DEMO_SCAN = {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "files" | "store" | "antifragile">("overview");
+  const [scan, setScan] = useState(DEMO_SCAN);
+  const [dataSource, setDataSource] = useState<"loading" | "scan" | "demo" | "error">("loading");
+
+  useEffect(() => {
+    fetch("/api/scan")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.source === "scan" && res.data) {
+          // Map scan-e2e-result.json to dashboard format
+          const d = res.data;
+          setScan({
+            project: d.project_path?.split(/[/\\]/).pop() ?? "project",
+            scanned_at: d.scanned_at ?? new Date().toISOString(),
+            files_scanned: d.files_scanned ?? 0,
+            total_defects: d.total_defects ?? 0,
+            overall_readiness: d.overall_readiness ?? 0,
+            by_priority: d.summary?.by_priority ?? { P0: 0, P1: 0, P2: 0, P3: 0 },
+            by_dimension: d.summary?.by_dimension ?? {},
+            files: (d.files ?? []).map((f: Record<string, unknown>) => ({
+              path: f.relative_path as string,
+              defects: (f.defects as unknown[])?.length ?? 0,
+              readiness: (f.readiness_score as number) ?? 0,
+              maturity: (f.maturity as string) ?? "needs-work",
+              risk: (f.risk_level as string) ?? "medium",
+            })),
+            antifragile: DEMO_SCAN.antifragile,
+            store_checks: DEMO_SCAN.store_checks,
+          });
+          setDataSource("scan");
+        } else {
+          setDataSource("demo");
+        }
+      })
+      .catch(() => setDataSource("demo"));
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header scan={DEMO_SCAN} />
+        <Header scan={scan} />
+        {dataSource === "demo" && (
+          <div className="mx-6 mt-3 p-3 rounded-lg bg-[var(--color-accent-yellow)]/10 border border-[var(--color-accent-yellow)]/30 text-xs text-[var(--color-accent-yellow)]">
+            Showing demo data. Run <code className="font-mono bg-[var(--color-bg-primary)] px-1 rounded">vibecheck scan:e2e --path ../your-project --report</code> then refresh to see real results.
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
           {activeTab === "overview" && (
             <>
-              <StatsCards scan={DEMO_SCAN} />
+              <StatsCards scan={scan} />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
-                  <ScoreRing score={DEMO_SCAN.overall_readiness} label="Production Readiness" />
+                  <ScoreRing score={scan.overall_readiness} label="Production Readiness" />
                 </div>
                 <div className="lg:col-span-2">
-                  <DefectChart byDimension={DEMO_SCAN.by_dimension} />
+                  <DefectChart byDimension={scan.by_dimension} />
                 </div>
               </div>
               <ActionPrompts />
             </>
           )}
-          {activeTab === "files" && <FileList files={DEMO_SCAN.files} />}
-          {activeTab === "store" && <StoreChecklist checks={DEMO_SCAN.store_checks} />}
-          {activeTab === "antifragile" && <AntifragileScore data={DEMO_SCAN.antifragile} />}
+          {activeTab === "files" && <FileList files={scan.files} />}
+          {activeTab === "store" && <StoreChecklist checks={scan.store_checks} />}
+          {activeTab === "antifragile" && <AntifragileScore data={scan.antifragile} />}
         </main>
       </div>
     </div>
