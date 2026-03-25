@@ -34,6 +34,10 @@ const YELLOW = "\x1b[33m";
 const DIM = "\x1b[2m";
 const NC = "\x1b[0m";
 
+// Pre-flight: ensure required directories exist
+mkdirSync(resolve(ROOT, "logs"), { recursive: true });
+mkdirSync(resolve(ROOT, "reports"), { recursive: true });
+
 function run(cmd: string, opts: Record<string, unknown> = {}): void {
   try {
     execSync(cmd, { cwd: ROOT, stdio: "inherit", ...opts });
@@ -46,6 +50,14 @@ function tsx(script: string, extraArgs: string[] = []): void {
   const all = ["tsx", resolve(ROOT, script), ...extraArgs];
   const result = spawnSync(all[0]!, all.slice(1), { cwd: ROOT, stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+// Check for LLM scan API key when --llm is used
+if (args.includes("--llm") && !process.env.ANTHROPIC_API_KEY) {
+  console.error(`${RED}Error: ANTHROPIC_API_KEY not set.${NC}`);
+  console.error(`${DIM}Set it with: export ANTHROPIC_API_KEY=sk-ant-...${NC}`);
+  console.error(`${DIM}Or run without --llm for static-only scanning.${NC}`);
+  process.exit(1);
 }
 
 switch (command) {

@@ -82,7 +82,12 @@ interface V2PScanResult {
 function readMFState(mfPath: string): MFPipelineState | null {
   const statePath = join(mfPath, "migration", "pipeline_state.json");
   if (!existsSync(statePath)) return null;
-  return JSON.parse(readFileSync(statePath, "utf-8")) as MFPipelineState;
+  try {
+    return JSON.parse(readFileSync(statePath, "utf-8")) as MFPipelineState;
+  } catch {
+    process.stderr.write(`[vibecheck] Warning: could not parse ${statePath}\n`);
+    return null;
+  }
 }
 
 /** Find migrated module directories — used when scanning specific modules */
@@ -275,7 +280,6 @@ async function main(): Promise<void> {
   const pathIdx = args.indexOf("--path");
   const mfPath = pathIdx >= 0 ? resolve(args[pathIdx + 1]!) : resolve(".");
   // --module filter reserved for per-module scanning (future use)
-  void args.indexOf("--module");
 
   console.log(`\x1b[35m[vibecheck×mf]\x1b[0m Post-migration hardening scan\n`);
 
