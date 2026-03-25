@@ -111,6 +111,14 @@ switch (command) {
     tsx("integrations/migrationforge.ts", args.slice(1));
     break;
 
+  case "comply":
+    tsx("scripts/comply.ts", args.slice(1));
+    break;
+
+  case "evidence:verify":
+    tsx("scripts/evidence-verify.ts", args.slice(1));
+    break;
+
   case "eval":
     tsx("evals/harness.ts", args.slice(1));
     break;
