@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #12121a;
+  --color-bg-card: #16161f;
+  --color-bg-card-hover: #1c1c28;
+  --color-border: #2a2a3a;
+  --color-border-bright: #3a3a52;
+  --color-text-primary: #e8e8f0;
+  --color-text-secondary: #8888a0;
+  --color-text-muted: #555568;
+  --color-accent-green: #22c55e;
+  --color-accent-green-dim: #16a34a;
+  --color-accent-red: #ef4444;
+  --color-accent-yellow: #eab308;
+  --color-accent-blue: #3b82f6;
+  --color-accent-purple: #a855f7;
+  --color-accent-cyan: #06b6d4;
+  --color-glow-green: rgba(34, 197, 94, 0.15);
+  --color-glow-red: rgba(239, 68, 68, 0.15);
+  --color-glow-blue: rgba(59, 130, 246, 0.1);
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-bright); }
+
+/* Glow effects */
+.glow-green { box-shadow: 0 0 20px var(--color-glow-green), inset 0 1px 0 rgba(34, 197, 94, 0.1); }
+.glow-red { box-shadow: 0 0 20px var(--color-glow-red), inset 0 1px 0 rgba(239, 68, 68, 0.1); }
+.glow-blue { box-shadow: 0 0 20px var(--color-glow-blue), inset 0 1px 0 rgba(59, 130, 246, 0.1); }
+
+/* Animated gradient border */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--color-accent-green), var(--color-accent-blue), var(--color-accent-purple));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+}
+
+/* Score ring animation */
+@keyframes score-fill {
+  from { stroke-dashoffset: 283; }
+}
+.score-ring { animation: score-fill 1.5s ease-out; }
+
+/* Pulse animation for live indicators */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pulse-live { animation: pulse-glow 2s ease-in-out infinite; }

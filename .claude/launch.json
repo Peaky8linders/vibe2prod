@@ -2,6 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "vibecheck-dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3100,
+      "cwd": "v2p-complete-package/repo/dashboard"
+    },
+    {
       "name": "dev-server",
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "npx tsx src/dev-server.ts"],
