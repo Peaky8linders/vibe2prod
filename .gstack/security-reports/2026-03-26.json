@@ -1,0 +1,82 @@
+{
+  "date": "2026-03-26",
+  "auditor": "CSO (Claude Code /cso)",
+  "scope": "Full codebase — v2p-complete-package/repo/",
+  "branch": "main",
+  "methodology": "OWASP Top 10 + STRIDE + Attack Surface Mapping",
+  "summary": {
+    "total_findings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "candidates_scanned": 8,
+    "filtered_as_false_positive": 8,
+    "independently_verified": 1,
+    "verification_method": "Agent sub-task with fresh context"
+  },
+  "attack_surface": {
+    "public_endpoints_unauthenticated": 4,
+    "authenticated_endpoints": 10,
+    "admin_only_endpoints": 1,
+    "api_endpoints_total": 15,
+    "file_upload_points": 0,
+    "external_integrations": 2,
+    "websocket_channels": 0,
+    "background_jobs": 1,
+    "mcp_tools": 13
+  },
+  "positive_security_controls": [
+    "Parameterized SQL queries throughout (zero raw SQL injection vectors)",
+    "CORS restricted to configured origins with allowlist (demo-app) and localhost (guardian)",
+    "CSRF double-submit pattern with __Host- prefix and timingSafeEqual",
+    "JWT auth with env-var-based secret (throws on missing JWT_SECRET)",
+    "Webhook HMAC-SHA256 signature verification with timingSafeEqual",
+    "Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, no X-Powered-By)",
+    "Input validation via Zod schemas on auth and task creation endpoints",
+    "Ownership checks on all task CRUD operations (user_id scoping)",
+    "Global error handler suppresses stack traces (error ID only)",
+    "SSRF protection on DAST scanner URL endpoint",
+    "MCP server path validation blocking system directories",
+    "Rate limiting on guardian dashboard API",
+    "Scrypt password hashing with random 32-byte salt",
+    "Soft delete for users (preserves referential integrity)",
+    "Request body size limits (1MB demo-app, 100KB guardian)",
+    "Evidence chain with SHA-256 integrity verification"
+  ],
+  "candidates_filtered": [
+    {
+      "candidate": "Timing side-channel in verifyPassword (crypto.ts:16)",
+      "filter_reason": "Independent verification scored 4/10. Scrypt KDF dominates timing (~100-200ms), string comparison delta is nanoseconds. No published remote timing attacks against post-KDF comparisons.",
+      "recommendation": "Best practice: switch to crypto.timingSafeEqual for defense-in-depth"
+    },
+    {
+      "candidate": "PUT /api/tasks/:id missing Zod validation",
+      "filter_reason": "Data integrity issue, not security. All values pass through parameterized queries. No injection or XSS vector (JSON API)."
+    },
+    {
+      "candidate": "Guardian dashboard zero authentication",
+      "filter_reason": "Localhost-only bind + CORS restricted to localhost:port. No DNS rebinding vector (CORS checks Origin header). Standard trust model for local dev tools."
+    },
+    {
+      "candidate": "Guardian config stores API keys in plaintext YAML",
+      "filter_reason": "Hard exclusion: secrets on disk in user home directory, OS-permissioned. Standard pattern for CLI config."
+    },
+    {
+      "candidate": "harden.ts execSync with rm -rf",
+      "filter_reason": "Hard exclusion: shell injection needs untrusted input. Entry comes from readdirSync (filesystem, not user input)."
+    },
+    {
+      "candidate": "Login timing for account enumeration",
+      "filter_reason": "Scrypt computation dwarfs timing delta. Same error message for both paths. Below confidence threshold (7/10)."
+    },
+    {
+      "candidate": "Guardian DAST SSRF bypass via DNS rebinding",
+      "filter_reason": "Requires local dashboard access (localhost-only). CORS blocks cross-origin. Highly theoretical. 5/10."
+    },
+    {
+      "candidate": "Dev server hardcoded JWT_SECRET fallback",
+      "filter_reason": "Dev-only file with explicit guard against non-local databases. Comment says 'not-for-production'. Intentional dev tooling."
+    }
+  ],
+  "prior_reports": "none"
+}
