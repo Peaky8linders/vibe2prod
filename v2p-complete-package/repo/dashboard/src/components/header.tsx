@@ -9,11 +9,11 @@ export function Header({ scan }: HeaderProps) {
   const timeAgo = getTimeAgo(scan.scanned_at);
 
   return (
-    <header className="h-16 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] flex items-center justify-between px-6">
-      <div className="flex items-center gap-4">
-        <div>
-          <h2 className="text-sm font-semibold">{scan.project}</h2>
-          <p className="text-xs text-[var(--color-text-muted)]">
+    <header className="h-16 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] flex items-center justify-between px-6 pl-16 lg:pl-6">
+      <div className="flex items-center gap-4 min-w-0">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold truncate">{scan.project}</h2>
+          <p className="text-xs text-[var(--color-text-muted)] whitespace-nowrap">
             {scan.files_scanned} files scanned {timeAgo}
           </p>
         </div>
@@ -30,10 +30,10 @@ export function Header({ scan }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-bright)] transition-all">
+        <button className="hidden sm:block px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-bright)] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]">
           Export Report
         </button>
-        <button className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-[var(--color-accent-green)] to-[var(--color-accent-cyan)] text-black hover:opacity-90 transition-all">
+        <button className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-[var(--color-accent-green)] to-[var(--color-accent-cyan)] text-black hover:opacity-90 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]">
           Re-scan
         </button>
       </div>
