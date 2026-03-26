@@ -61,10 +61,10 @@ export const PLANS: Plan[] = [
       "Unlimited scans",
       "LLM-powered defect detection",
       "Autonomous fix loop",
+      "Performance + observability scanners",
       "Full security gates",
-      "Full dashboard + file analysis",
-      "HTML reports",
-      "Email support",
+      "CI/CD pipeline integration",
+      "HTML reports + email support",
     ],
     limits: {
       scansPerMonth: "unlimited",
@@ -88,11 +88,10 @@ export const PLANS: Plan[] = [
     features: [
       "Everything in Pro",
       "Chaos testing & adversarial probes",
+      "API contract scanner",
       "Compliance & evidence chain",
       "Antifragile scoring",
-      "Custom security gates",
-      "HTML + PDF reports",
-      "Dedicated support",
+      "HTML + PDF reports + dedicated support",
     ],
     limits: {
       scansPerMonth: "unlimited",
