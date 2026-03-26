@@ -391,6 +391,63 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
+// Tool: vc_scan_perf — Performance antipattern scanner
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "vc_scan_perf",
+  "Scan for performance antipatterns: N+1 queries, sync blocking, missing pagination, unbounded results, no timeouts.",
+  {
+    path: z.string().optional().describe("Path to project to scan (default: target/demo-app)"),
+    json: z.boolean().optional().describe("Return results as JSON"),
+  },
+  async ({ path, json }) => {
+    const args = ["performance"];
+    if (path) args.push("--path", validatePath(path, "vc_scan_perf"));
+    if (json) args.push("--json");
+    return formatResult(runTsx("scripts/run-scanner.ts", args));
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Tool: vc_scan_observability — Observability gap scanner
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "vc_scan_observability",
+  "Scan for observability gaps: missing error tracking, no request IDs, unstructured logging, no health checks.",
+  {
+    path: z.string().optional().describe("Path to project to scan (default: target/demo-app)"),
+    json: z.boolean().optional().describe("Return results as JSON"),
+  },
+  async ({ path, json }) => {
+    const args = ["observability"];
+    if (path) args.push("--path", validatePath(path, "vc_scan_observability"));
+    if (json) args.push("--json");
+    return formatResult(runTsx("scripts/run-scanner.ts", args));
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Tool: vc_scan_api — API contract scanner
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "vc_scan_api",
+  "Scan for API contract issues: missing validation, no versioning, inconsistent errors, breaking change risks.",
+  {
+    path: z.string().optional().describe("Path to project to scan (default: target/demo-app)"),
+    json: z.boolean().optional().describe("Return results as JSON"),
+  },
+  async ({ path, json }) => {
+    const args = ["api-contract"];
+    if (path) args.push("--path", validatePath(path, "vc_scan_api"));
+    if (json) args.push("--json");
+    return formatResult(runTsx("scripts/run-scanner.ts", args));
+  },
+);
+
+// ---------------------------------------------------------------------------
 // Start Server
 // ---------------------------------------------------------------------------
 

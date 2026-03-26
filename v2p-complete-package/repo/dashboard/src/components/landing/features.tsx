@@ -65,6 +65,40 @@ const FEATURES = [
     description: "Three-component score: robustness + chaos resilience + production adaptation. Improves under stress.",
     color: "var(--color-accent-cyan)",
   },
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+    title: "Performance Scanner",
+    description: "Detect N+1 queries, sync blocking, missing pagination, and unbounded results before they hit production.",
+    color: "var(--color-accent-green)",
+  },
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+    title: "Observability Gaps",
+    description: "Find missing error tracking, absent request IDs, no health checks, and unstructured logging.",
+    color: "var(--color-accent-blue)",
+  },
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+        <line x1="8" y1="21" x2="16" y2="21" />
+        <line x1="12" y1="17" x2="12" y2="21" />
+      </svg>
+    ),
+    title: "API Contract Checks",
+    description: "Catch missing validation, inconsistent errors, no versioning, and breaking changes before deploy.",
+    color: "var(--color-accent-yellow)",
+  },
 ];
 
 export function Features() {

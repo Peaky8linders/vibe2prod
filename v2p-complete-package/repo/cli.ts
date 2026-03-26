@@ -161,6 +161,18 @@ switch (command) {
     tsx("scripts/generate-launch-report.ts", args.slice(1));
     break;
 
+  case "scan:perf":
+    tsx("scripts/run-scanner.ts", ["performance", ...args.slice(1)]);
+    break;
+
+  case "scan:observability":
+    tsx("scripts/run-scanner.ts", ["observability", ...args.slice(1)]);
+    break;
+
+  case "scan:api":
+    tsx("scripts/run-scanner.ts", ["api-contract", ...args.slice(1)]);
+    break;
+
   case "subtract":
     tsx("subtract/scanner.ts", args.slice(1));
     break;
@@ -239,6 +251,9 @@ switch (command) {
     console.log(`  ${GREEN}init${NC} <path>           Copy project, capture baseline, scan defects`);
     console.log(`  ${GREEN}scan${NC} [--llm]          Run defect scanner`);
     console.log(`  ${GREEN}scan:e2e${NC} [--report]   File-by-file scan with actionable fix prompts`);
+    console.log(`  ${GREEN}scan:perf${NC}             Performance antipatterns (N+1, sync blocking, no pagination)`);
+    console.log(`  ${GREEN}scan:api${NC}              API contract issues (missing validation, breaking changes)`);
+    console.log(`  ${GREEN}scan:observability${NC}    Observability gaps (missing tracing, health checks)`);
     console.log(`  ${GREEN}eval${NC}                  Run full eval harness`);
     console.log(`  ${GREEN}score${NC} [--detail]      Show readiness score (--antifragile for 3-component)`);
     console.log(`  ${GREEN}fix${NC}                   Run single fix attempt`);
