@@ -1,14 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 export function Hero() {
   const [score, setScore] = useState(0);
+  const [repoUrl, setRepoUrl] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => setScore(88), 300);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleScan = useCallback(async () => {
+    if (!repoUrl.trim()) return;
+    if (!/github\.com\/[^/]+\/[^/\s]+/.test(repoUrl)) {
+      setError("Please enter a valid GitHub URL (e.g., https://github.com/owner/repo)");
+      return;
+    }
+
+    setError("");
+    setScanning(true);
+
+    try {
+      const res = await fetch("/api/scan/github", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: repoUrl }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error || "Scan failed. Please try again.");
+        setScanning(false);
+        return;
+      }
+
+      // Store results in sessionStorage and navigate to dashboard
+      sessionStorage.setItem("vibecheck-scan", JSON.stringify(json.data));
+      sessionStorage.setItem("vibecheck-repo-url", repoUrl);
+      router.push("/dashboard");
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+      setScanning(false);
+    }
+  }, [repoUrl, router]);
 
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (score / 100) * circumference;
@@ -45,18 +85,47 @@ export function Hero() {
             VibeCheck scans your codebase, finds production defects, and autonomously fixes them — while you sleep. Antifragile security for teams that ship fast.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-            <a
-              href="#pricing"
-              className="px-6 py-3 rounded-lg bg-[var(--color-accent-green)] text-black font-semibold text-sm hover:brightness-110 transition-all"
-            >
-              Get Started Free
-            </a>
+          {/* GitHub URL input */}
+          <div className="max-w-xl mx-auto lg:mx-0">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="url"
+                placeholder="https://github.com/owner/repo"
+                value={repoUrl}
+                onChange={(e) => { setRepoUrl(e.target.value); setError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && handleScan()}
+                disabled={scanning}
+                className="flex-1 px-4 py-3 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent-green)] disabled:opacity-50 transition-colors"
+              />
+              <button
+                onClick={handleScan}
+                disabled={scanning || !repoUrl.trim()}
+                className="px-6 py-3 rounded-lg bg-[var(--color-accent-green)] text-black font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {scanning ? "Scanning..." : "Scan Now"}
+              </button>
+            </div>
+            {error && (
+              <p className="mt-2 text-xs text-[var(--color-accent-red)]">{error}</p>
+            )}
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              Public repositories only. Paste any GitHub URL to get started.
+            </p>
+          </div>
+
+          <div className="flex gap-3 justify-center lg:justify-start mt-2">
             <a
               href="#how-it-works"
-              className="px-6 py-3 rounded-lg border border-[var(--color-border)] text-[var(--color-text-primary)] font-medium text-sm hover:border-[var(--color-border-bright)] hover:bg-[var(--color-bg-secondary)] transition-all"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
-              See How It Works
+              How It Works &darr;
+            </a>
+            <span className="text-[var(--color-text-muted)]">&middot;</span>
+            <a
+              href="#pricing"
+              className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
+              View Pricing
             </a>
           </div>
         </div>
