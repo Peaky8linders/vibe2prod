@@ -10,6 +10,26 @@ import { Readable } from "node:stream";
 import { createGunzip } from "node:zlib";
 import { extract } from "tar-stream";
 
+// Specialized scanner plugins (ported from repo scanners/)
+import type { ScannerPlugin } from "./scanners/plugin-interface";
+import { performanceScanner } from "./scanners/performance-scanner";
+import { observabilityScanner } from "./scanners/observability-scanner";
+import { apiContractScanner } from "./scanners/api-contract-scanner";
+import { complianceScanner } from "./scanners/compliance-scanner";
+import { governanceScanner } from "./scanners/governance-scanner";
+import { securityScanner } from "./scanners/security-scanner";
+import { codeQualityScanner } from "./scanners/code-quality-scanner";
+
+const SCANNER_PLUGINS: ScannerPlugin[] = [
+  performanceScanner,
+  observabilityScanner,
+  apiContractScanner,
+  complianceScanner,
+  governanceScanner,
+  securityScanner,
+  codeQualityScanner,
+];
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -263,12 +283,22 @@ export function scanFiles(files: Map<string, string>, projectName: string): Scan
 
     const lines = content.split("\n");
 
-    // Run scanners
-    let defects: FileDefect[];
+    // Run built-in scanners
+    const defects: FileDefect[] = [];
     if (lang === "python") {
-      defects = scanPythonFile(relPath, content, lines);
+      defects.push(...scanPythonFile(relPath, content, lines));
     } else {
-      defects = scanTsJsFile(relPath, content, lines);
+      defects.push(...scanTsJsFile(relPath, content, lines));
+    }
+
+    // Run all specialized scanner plugins
+    for (const plugin of SCANNER_PLUGINS) {
+      try {
+        const pluginDefects = plugin.scan(relPath, content, lang);
+        defects.push(...pluginDefects);
+      } catch (err) {
+        console.warn(`[VibeCheck] Scanner plugin "${plugin.name}" failed on ${relPath}:`, err instanceof Error ? err.message : err);
+      }
     }
 
     // Score

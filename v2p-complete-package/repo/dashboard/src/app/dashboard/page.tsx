@@ -11,6 +11,7 @@ import { Header } from "@/components/header";
 import { StatsCards } from "@/components/stats-cards";
 import { AntifragileScore } from "@/components/antifragile-score";
 import { ActionPrompts } from "@/components/action-prompts";
+import { ReviewTab } from "@/components/review-tab";
 import { ScanProgress } from "@/components/scan-progress";
 
 interface ScanData {
@@ -48,7 +49,7 @@ function mapApiScanToLocal(d: Record<string, unknown>): ScanData {
 }
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "files" | "store" | "antifragile">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "files" | "review" | "store" | "antifragile">("overview");
   const [scan, setScan] = useState<ScanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [rescanning, setRescanning] = useState(false);
@@ -165,6 +166,7 @@ export default function Dashboard() {
             </>
           )}
           {activeTab === "files" && <FileList files={scan.files as Array<{ path: string; defects: number; readiness: number; maturity: "critical" | "needs-work" | "mostly-clean" | "hardened"; risk: "high" | "medium" | "low" }>} />}
+          {activeTab === "review" && <ReviewTab scanData={scan} />}
           {activeTab === "store" && <StoreChecklist checks={scan.store_checks} />}
           {activeTab === "antifragile" && <AntifragileScore data={scan.antifragile} />}
         </main>

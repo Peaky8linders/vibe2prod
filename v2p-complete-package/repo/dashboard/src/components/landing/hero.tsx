@@ -2,16 +2,20 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { getTrialStatus, recordScan } from "@/lib/scan-limits";
 
 export function Hero() {
   const [score, setScore] = useState(0);
   const [repoUrl, setRepoUrl] = useState("");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [trialInfo, setTrialInfo] = useState<ReturnType<typeof getTrialStatus> | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => setScore(88), 300);
+    setTrialInfo(getTrialStatus());
     return () => clearTimeout(timer);
   }, []);
 
@@ -22,7 +26,20 @@ export function Hero() {
       return;
     }
 
+    // Check trial limits
+    const status = getTrialStatus();
+    if (!status.canScan) {
+      setShowUpgrade(true);
+      setError(
+        status.trialExpired
+          ? "Your 7-day free trial has ended. For deeper, LLM-powered scans and autonomous fixes, check out our Pro plan."
+          : `You've used all ${status.maxPerDay} free scans for today. For unlimited scans with LLM-powered analysis, upgrade to Pro.`
+      );
+      return;
+    }
+
     setError("");
+    setShowUpgrade(false);
     setScanning(true);
 
     try {
@@ -40,7 +57,11 @@ export function Hero() {
         return;
       }
 
-      // Store results in sessionStorage and navigate to dashboard
+      // Record the scan immediately after successful API response
+      recordScan();
+      setTrialInfo(getTrialStatus());
+
+      // Store results and navigate to dashboard
       sessionStorage.setItem("vibecheck-scan", JSON.stringify(json.data));
       sessionStorage.setItem("vibecheck-repo-url", repoUrl);
       router.push("/dashboard");
@@ -106,11 +127,42 @@ export function Hero() {
               </button>
             </div>
             {error && (
-              <p className="mt-2 text-xs text-[var(--color-accent-red)]">{error}</p>
+              <div className="mt-3 p-3 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)]">
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {error}
+                </p>
+                {showUpgrade && (
+                  <a
+                    href="#pricing"
+                    className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-md bg-[var(--color-accent-green)]/10 border border-[var(--color-accent-green)]/20 text-[var(--color-accent-green)] text-xs font-medium hover:bg-[var(--color-accent-green)]/20 transition-colors"
+                  >
+                    View subscription plans
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
+                  </a>
+                )}
+              </div>
             )}
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-              Public repositories only. Paste any GitHub URL to get started.
-            </p>
+            <div className="mt-2 flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+              <span>Public repos only</span>
+              {trialInfo && !trialInfo.trialExpired && (
+                <>
+                  <span className="text-[var(--color-border)]">&middot;</span>
+                  <span>
+                    {trialInfo.maxPerDay - trialInfo.scansToday} of {trialInfo.maxPerDay} free scans left today
+                  </span>
+                  <span className="text-[var(--color-border)]">&middot;</span>
+                  <span>{trialInfo.trialDaysLeft} days left in trial</span>
+                </>
+              )}
+              {trialInfo?.trialExpired && (
+                <>
+                  <span className="text-[var(--color-border)]">&middot;</span>
+                  <span className="text-[var(--color-accent-yellow)]">
+                    Trial ended &mdash; <a href="#pricing" className="underline hover:no-underline">upgrade for unlimited scans</a>
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-3 justify-center lg:justify-start mt-2">
