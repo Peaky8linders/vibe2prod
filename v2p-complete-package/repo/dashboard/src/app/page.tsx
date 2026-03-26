@@ -12,18 +12,11 @@ export default function LandingPage() {
       <Hero />
 
       {/* Social proof */}
-      <section className="py-12 border-y border-[var(--color-border)]">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-6">
-            Trusted by teams shipping to production
+      <section className="py-10 border-y border-[var(--color-border)]">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Trusted by professional vibe coders shipping to production
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-[var(--color-text-muted)]">
-            {["Acme Corp", "Lattice", "Meridian", "Skyline", "Novanet"].map((name) => (
-              <span key={name} className="text-lg font-semibold opacity-40 hover:opacity-60 transition-opacity">
-                {name}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
