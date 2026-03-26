@@ -1,0 +1,22 @@
+{
+  "name": "VibeCheck Security",
+  "description": "Automatic security scanning for every pull request. Detects hardcoded secrets, missing Supabase RLS, SQL injection, auth gaps, and 50+ defect patterns.",
+  "url": "https://vibecheck.dev",
+  "hook_attributes": {
+    "url": "https://vibecheck.dev/api/github/webhook",
+    "active": true
+  },
+  "redirect_url": "https://vibecheck.dev/api/github/setup",
+  "callback_urls": ["https://vibecheck.dev/api/github/setup"],
+  "setup_url": "https://vibecheck.dev/setup/github",
+  "public": true,
+  "default_permissions": {
+    "checks": "write",
+    "contents": "read",
+    "pull_requests": "write"
+  },
+  "default_events": [
+    "pull_request",
+    "installation"
+  ]
+}

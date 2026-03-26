@@ -19,6 +19,7 @@ import { complianceScanner } from "./scanners/compliance-scanner";
 import { governanceScanner } from "./scanners/governance-scanner";
 import { securityScanner } from "./scanners/security-scanner";
 import { codeQualityScanner } from "./scanners/code-quality-scanner";
+import { databaseSecurityScanner } from "./scanners/database-security-scanner";
 
 const SCANNER_PLUGINS: ScannerPlugin[] = [
   performanceScanner,
@@ -28,6 +29,7 @@ const SCANNER_PLUGINS: ScannerPlugin[] = [
   governanceScanner,
   securityScanner,
   codeQualityScanner,
+  databaseSecurityScanner,
 ];
 
 // ---------------------------------------------------------------------------

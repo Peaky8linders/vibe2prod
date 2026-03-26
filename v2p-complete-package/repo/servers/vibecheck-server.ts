@@ -448,6 +448,25 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
+// Tool: vc_scan_database — Database security scanner (Supabase RLS + Firebase)
+// ---------------------------------------------------------------------------
+
+server.tool(
+  "vc_scan_database",
+  "Scan for database security issues: missing Supabase RLS policies, insecure Firebase rules, service role key exposure in client code, tables without RLS in migrations.",
+  {
+    path: z.string().optional().describe("Path to project to scan (default: target/demo-app)"),
+    json: z.boolean().optional().describe("Return results as JSON"),
+  },
+  async ({ path, json }) => {
+    const args = ["database-security"];
+    if (path) args.push("--path", validatePath(path, "vc_scan_database"));
+    if (json) args.push("--json");
+    return formatResult(runTsx("scripts/run-scanner.ts", args));
+  },
+);
+
+// ---------------------------------------------------------------------------
 // Start Server
 // ---------------------------------------------------------------------------
 

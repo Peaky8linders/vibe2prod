@@ -64,6 +64,9 @@ export function Hero() {
       // Store results and navigate to dashboard
       sessionStorage.setItem("vibecheck-scan", JSON.stringify(json.data));
       sessionStorage.setItem("vibecheck-repo-url", repoUrl);
+      if (json.reportId) {
+        sessionStorage.setItem("vibecheck-report-id", json.reportId);
+      }
       router.push("/dashboard");
     } catch {
       setError("Network error. Please check your connection and try again.");

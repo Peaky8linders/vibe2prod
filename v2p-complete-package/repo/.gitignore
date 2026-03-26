@@ -8,3 +8,5 @@ target/dist/
 .baseline-score
 .eval-integrity
 *.log
+dashboard/.reports/
+dashboard/.next/
