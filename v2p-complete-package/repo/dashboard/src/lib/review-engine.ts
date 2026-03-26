@@ -172,13 +172,16 @@ export function buildReviewReport(scanResult: ScanInput): ReviewReport {
   const qaIssues: ReviewIssue[] = [];
   let issueCounter = 0;
 
-  // Build synthetic defects from file results and dimension counts
-  for (const file of scanResult.files) {
-    if (file.defects === 0) continue;
+  const MAX_PER_SECTION = 20;
 
-    // Distribute defects across dimensions proportionally
-    const totalDimDefects = Object.values(scanResult.by_dimension).reduce((a, b) => a + b, 0);
-    if (totalDimDefects === 0) continue;
+  // Build synthetic defects from file results and dimension counts
+  const totalDimDefects = Object.values(scanResult.by_dimension).reduce((a, b) => a + b, 0);
+
+  for (const file of scanResult.files) {
+    if (file.defects === 0 || totalDimDefects === 0) continue;
+
+    // Early exit: all sections full
+    if (engIssues.length >= MAX_PER_SECTION && designIssues.length >= MAX_PER_SECTION && qaIssues.length >= MAX_PER_SECTION) break;
 
     for (const [dim, count] of Object.entries(scanResult.by_dimension)) {
       const fileShare = Math.round((count / totalDimDefects) * file.defects);
@@ -212,9 +215,9 @@ export function buildReviewReport(scanResult: ScanInput): ReviewReport {
         alternatives,
       };
 
-      if (ENGINEERING_DIMS.has(dim)) engIssues.push(issue);
-      else if (DESIGN_DIMS.has(dim)) designIssues.push(issue);
-      else qaIssues.push(issue);
+      if (ENGINEERING_DIMS.has(dim) && engIssues.length < MAX_PER_SECTION) engIssues.push(issue);
+      else if (DESIGN_DIMS.has(dim) && designIssues.length < MAX_PER_SECTION) designIssues.push(issue);
+      else if (!ENGINEERING_DIMS.has(dim) && !DESIGN_DIMS.has(dim) && qaIssues.length < MAX_PER_SECTION) qaIssues.push(issue);
     }
   }
 
@@ -247,17 +250,17 @@ export function buildReviewReport(scanResult: ScanInput): ReviewReport {
     engineering: {
       name: "Engineering Review",
       score: computeSectionScore(engIssues),
-      issues: engIssues.slice(0, 20),
+      issues: engIssues,
     },
     design: {
       name: "Design Review",
       score: computeSectionScore(designIssues),
-      issues: designIssues.slice(0, 20),
+      issues: designIssues,
     },
     qa: {
       name: "QA Review",
       score: computeSectionScore(qaIssues),
-      issues: qaIssues.slice(0, 20),
+      issues: qaIssues,
     },
     topActions,
   };

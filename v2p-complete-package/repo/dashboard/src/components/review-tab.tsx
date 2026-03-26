@@ -139,28 +139,22 @@ function ExportButton({ report }: { report: ReviewReport }) {
   const [copied, setCopied] = useState(false);
 
   const handleExport = (format: "markdown" | "json" | "clipboard") => {
-    let content: string;
-    if (format === "markdown") {
-      content = exportMarkdown(report);
-      const blob = new Blob([content], { type: "text/markdown" });
+    const safeName = report.project.replace(/[^a-zA-Z0-9._-]/g, "_");
+    if (format === "markdown" || format === "json") {
+      const content = format === "markdown" ? exportMarkdown(report) : exportJSON(report);
+      const mimeType = format === "markdown" ? "text/markdown" : "application/json";
+      const ext = format === "markdown" ? "md" : "json";
+      const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `vibecheck-review-${report.project}.md`;
+      a.download = `vibecheck-review-${safeName}.${ext}`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
-    } else if (format === "json") {
-      content = exportJSON(report);
-      const blob = new Blob([content], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `vibecheck-review-${report.project}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 200);
     } else {
-      content = exportClipboard(report);
-      navigator.clipboard.writeText(content);
+      navigator.clipboard.writeText(exportClipboard(report));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

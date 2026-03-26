@@ -208,7 +208,7 @@ export const complianceScanner: ScannerPlugin = {
       if (rule.languages && !rule.languages.includes(language)) continue;
 
       // Find all matches
-      const globalPattern = new RegExp(rule.pattern.source, rule.pattern.flags + (rule.pattern.flags.includes("g") ? "" : "g"));
+      const globalPattern = new RegExp(rule.pattern.source, rule.pattern.flags.replace(/[gs]/g, "") + "g");
       let match: RegExpExecArray | null;
 
       while ((match = globalPattern.exec(content)) !== null) {

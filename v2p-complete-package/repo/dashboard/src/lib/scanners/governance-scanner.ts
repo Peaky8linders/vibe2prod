@@ -77,10 +77,10 @@ const GOVERNANCE_RULES: GovernanceRule[] = [
     id: "GOV-020",
     dimension: "incident-response",
     priority: "P2",
-    description: "No error reporting or alerting integration",
-    fix_hint: "Add error reporting service (Sentry, Datadog, PagerDuty) for production incidents",
+    description: "Raw uncaught exception handler without error reporting service integration",
+    fix_hint: "Replace bare process.on handlers with Sentry, Datadog, or PagerDuty integration for structured incident reporting",
     regulation: "EU AI Act Art. 62 (Serious Incident Reporting) / ISO 27001 A.16",
-    pattern: /(?:process\.on\s*\(\s*['"]uncaughtException|unhandledRejection)/,
+    pattern: /process\.on\s*\(\s*['"](?:uncaughtException|unhandledRejection)['"]\s*,\s*(?:\([^)]*\)|[a-zA-Z_$]+)\s*(?:=>|{)\s*(?:console\.(?:log|error)|process\.exit)/,
     filePattern: /(?:server|app|index|main)\./i,
   },
   {
@@ -142,7 +142,7 @@ export const governanceScanner: ScannerPlugin = {
       // Check language filter
       if (rule.languages && !rule.languages.includes(_language)) continue;
 
-      const globalPattern = new RegExp(rule.pattern.source, rule.pattern.flags + (rule.pattern.flags.includes("g") ? "" : "g"));
+      const globalPattern = new RegExp(rule.pattern.source, rule.pattern.flags.replace(/[gs]/g, "") + "g");
       let match: RegExpExecArray | null;
 
       while ((match = globalPattern.exec(content)) !== null) {
