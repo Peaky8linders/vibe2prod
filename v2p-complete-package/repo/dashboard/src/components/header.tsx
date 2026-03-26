@@ -2,9 +2,11 @@
 
 interface HeaderProps {
   scan: { project: string; scanned_at: string; files_scanned: number; total_defects: number; by_priority: { P0: number } };
+  onRescan?: () => void;
+  onNewScan?: () => void;
 }
 
-export function Header({ scan }: HeaderProps) {
+export function Header({ scan, onRescan, onNewScan }: HeaderProps) {
   const isBlocked = scan.by_priority.P0 > 0;
   const timeAgo = getTimeAgo(scan.scanned_at);
 
@@ -30,12 +32,22 @@ export function Header({ scan }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="hidden sm:block px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-bright)] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]">
-          Export Report
-        </button>
-        <button className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-[var(--color-accent-green)] to-[var(--color-accent-cyan)] text-black hover:opacity-90 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]">
-          Re-scan
-        </button>
+        {onNewScan && (
+          <button
+            onClick={onNewScan}
+            className="hidden sm:block px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-bright)] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]"
+          >
+            New Scan
+          </button>
+        )}
+        {onRescan && (
+          <button
+            onClick={onRescan}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-[var(--color-accent-green)] to-[var(--color-accent-cyan)] text-black hover:opacity-90 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-green)]"
+          >
+            Re-scan
+          </button>
+        )}
       </div>
     </header>
   );
