@@ -67,3 +67,13 @@ body {
   50% { opacity: 0.5; }
 }
 .pulse-live { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* Landing page float animation */
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.hero-float-badge { animation: hero-float 3s ease-in-out infinite; }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
