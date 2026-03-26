@@ -101,7 +101,7 @@ const GOVERNANCE_RULES: GovernanceRule[] = [
     description: "Database operations without transaction boundaries",
     fix_hint: "Wrap multi-step DB operations in transactions for atomicity",
     regulation: "ISO 27001 A.17 / NIST SP 800-53 CP-10",
-    pattern: /(?:\.query\s*\([^)]*(?:INSERT|UPDATE|DELETE).*\.query\s*\([^)]*(?:INSERT|UPDATE|DELETE))/is,
+    pattern: /(?:\.query\s*\([^)]*(?:INSERT|UPDATE|DELETE).*\.query\s*\([^)]*(?:INSERT|UPDATE|DELETE))/i,
   },
 
   // Data Classification

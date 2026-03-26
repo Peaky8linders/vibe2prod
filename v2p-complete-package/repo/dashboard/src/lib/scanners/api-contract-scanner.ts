@@ -118,7 +118,7 @@ const API_PATTERNS: ApiPattern[] = [
     priority: "P2",
     description: "DELETE endpoint returns 200 without confirmation body — client cannot confirm what was deleted",
     fix_hint: "Return 200 { deleted: true, id: '...' } or use 204 No Content for successful deletes",
-    pattern: /(?:delete|remove|destroy)[^}]*res\.(?:sendStatus\s*\(\s*200|status\s*\(\s*200\s*\)\.end)/is,
+    pattern: /(?:delete|remove|destroy)[^}]*res\.(?:sendStatus\s*\(\s*200|status\s*\(\s*200\s*\)\.end)/i,
     handler_only: true,
   },
   {

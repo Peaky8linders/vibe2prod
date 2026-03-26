@@ -30,7 +30,7 @@ const PERF_PATTERNS: PerfPattern[] = [
     priority: "P0",
     description: "N+1 query: database call inside a loop — causes O(N) round-trips instead of O(1) batch",
     fix_hint: "Batch queries: collect IDs first, then query with WHERE id IN (...) or use a JOIN",
-    pattern: /(?:for\s*\(|\.(?:forEach|map|flatMap|reduce)\s*\()[^}]{0,500}(?:\.query|\.execute|\.find(?:One)?|\.select|\.from|\.where|await\s+\w+\.(?:get|fetch|load|find))\s*\(/s,
+    pattern: /(?:for\s*\(|\.(?:forEach|map|flatMap|reduce)\s*\()[^}]{0,500}(?:\.query|\.execute|\.find(?:One)?|\.select|\.from|\.where|await\s+\w+\.(?:get|fetch|load|find))\s*\(/,
   },
   {
     id: "PERF-002",
@@ -38,7 +38,7 @@ const PERF_PATTERNS: PerfPattern[] = [
     priority: "P0",
     description: "Synchronous file I/O in async handler — blocks the event loop for all requests",
     fix_hint: "Replace readFileSync/writeFileSync/existsSync with async fs/promises equivalents",
-    pattern: /(?:async\s+(?:function|\([^)]{0,200}\)\s*=>))[^}]{0,500}(?:readFileSync|writeFileSync|appendFileSync|existsSync|readdirSync|statSync|mkdirSync)/s,
+    pattern: /(?:async\s+(?:function|\([^)]{0,200}\)\s*=>))[^}]{0,500}(?:readFileSync|writeFileSync|appendFileSync|existsSync|readdirSync|statSync|mkdirSync)/,
     exclude: /(?:scripts|cli|build|config)\//,
   },
 
@@ -74,7 +74,7 @@ const PERF_PATTERNS: PerfPattern[] = [
     priority: "P1",
     description: "Missing database index hint — querying on columns without WHERE/ORDER optimization",
     fix_hint: "Add CREATE INDEX on columns used in WHERE, JOIN, and ORDER BY clauses",
-    pattern: /CREATE\s+TABLE\b(?!.*CREATE\s+INDEX)/s,
+    pattern: /CREATE\s+TABLE\b(?!.*CREATE\s+INDEX)/,
     languages: ["sql"],
   },
 
@@ -111,7 +111,7 @@ const PERF_PATTERNS: PerfPattern[] = [
     priority: "P2",
     description: "Sequential await in loop — each iteration waits for the previous, use Promise.all for parallelism",
     fix_hint: "Collect promises and use Promise.all([...promises]) or Promise.allSettled for parallel execution",
-    pattern: /for\s*\([^)]{0,200}\)\s*\{[^}]{0,500}await\s+/s,
+    pattern: /for\s*\([^)]{0,200}\)\s*\{[^}]{0,500}await\s+/,
   },
 
   // P3 — Nice to Have
@@ -130,7 +130,7 @@ const PERF_PATTERNS: PerfPattern[] = [
     priority: "P3",
     description: "Console.log in hot path — synchronous I/O in request handler degrades throughput",
     fix_hint: "Replace console.log with async logger (pino, winston) or remove from hot paths",
-    pattern: /(?:app\.(?:get|post|put|delete|patch|use)|router\.(?:get|post|put|delete|patch))[^}]{0,500}console\.(?:log|info|debug)/s,
+    pattern: /(?:app\.(?:get|post|put|delete|patch|use)|router\.(?:get|post|put|delete|patch))[^}]{0,500}console\.(?:log|info|debug)/,
   },
 ];
 
