@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VibeCheck — Production Readiness Dashboard",
-  description: "Your app doesn't just survive attacks — it gets stronger from them.",
+  title: "VibeCheck — Antifragile Production Hardening",
+  description: "Your code doesn't just survive attacks — it gets stronger from them. Scan, fix, and harden autonomously.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
