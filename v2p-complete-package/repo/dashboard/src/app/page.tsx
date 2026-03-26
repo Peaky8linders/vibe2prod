@@ -10,6 +10,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <Navbar />
       <Hero />
+      <Features />
 
       {/* Social proof */}
       <section className="py-10 border-y border-[var(--color-border)]">
@@ -19,8 +20,6 @@ export default function LandingPage() {
           </p>
         </div>
       </section>
-
-      <Features />
       <HowItWorks />
       <Pricing />
 

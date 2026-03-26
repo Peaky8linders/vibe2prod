@@ -12,7 +12,10 @@ export function Navbar() {
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
           <Logo />
-          <span className="font-bold text-lg">VibeCheck</span>
+          <div className="flex flex-col leading-tight">
+            <span className="font-bold text-lg">VibeCheck</span>
+            <span className="text-[10px] text-[var(--color-text-muted)] tracking-wide">by Antifragile.AI</span>
+          </div>
         </a>
 
         {/* Desktop links */}
