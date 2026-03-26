@@ -88,7 +88,7 @@ export function Hero() {
             Now in public beta
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1] mb-6">
             Your code doesn&apos;t just{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-accent-green)] to-[var(--color-accent-cyan)]">
               survive
@@ -102,7 +102,7 @@ export function Hero() {
             from them.
           </h1>
 
-          <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mb-8 mx-auto lg:mx-0">
+          <p className="text-base text-[var(--color-text-secondary)] max-w-xl mb-8 mx-auto lg:mx-0">
             VibeCheck scans your codebase, finds production defects, and autonomously fixes them — while you sleep. Antifragile security for teams that ship fast.
           </p>
 

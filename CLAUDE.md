@@ -119,6 +119,15 @@ LEARN → Production signals → New defects → New eval judges
 - Real scan data integration — wired to actual VibeCheck scan output
 - Responsive design with accessibility fixes
 
+### Landing Page
+- **Branding**: "VibeCheck by Antifragile.AI" in navbar
+- **Layout**: Hero → Features (9-card grid) → Social proof → How It Works → Pricing → CTA → Footer
+- **Features visible immediately**: Capabilities grid appears right after hero, above the fold
+- **Components**: `src/components/landing/` — navbar, hero, features, how-it-works, pricing, footer
+- **CTA**: "Ready to harden your code?" with free scan link at bottom
+- **GitHub scanning**: Real repo URL input in hero, wired to `/api/scan/github`
+- **Trial system**: 3 free scans/day, 7-day trial, upgrade prompts
+
 ### MCP Integration
 - **MCP server**: `vibecheck-mcp` — exposes VibeCheck tools to Claude Code
 - **Skills**: scan-and-fix, harden, post-migration, antifragile-report, comply
