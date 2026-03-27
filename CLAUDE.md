@@ -40,11 +40,24 @@ v2p-complete-package/repo/
 │── # Product Surface
 ├── dashboard/                # Next.js 15 production readiness UI
 │   ├── src/app/              # App router (dark theme, 4-tab interface)
+│   ├── src/app/api/          # API routes (scan, github webhook, reports, auth)
+│   ├── src/app/report/       # Shareable report pages (UUID-based)
+│   ├── src/app/setup/        # GitHub App setup/installation flow
+│   ├── src/lib/              # github-app, api-auth, report-store, scanner-engine
 │   └── src/components/       # score-ring, defect-chart, action-prompts, antifragile-score
 ├── servers/                  # MCP server (vibecheck-server.ts)
 ├── skills/                   # Claude Code MCP skills (scan-and-fix, harden, comply, etc.)
 ├── integrations/             # External integrations (migrationforge)
-└── reports/                  # Generated stakeholder reports + prompt templates
+├── reports/                  # Generated stakeholder reports + prompt templates
+│
+│── # Planning & Monetization
+├── .planning/                # Monetization milestone planning docs
+│   ├── PROJECT.md            # Milestone overview (Stripe + Supabase Auth)
+│   ├── REQUIREMENTS.md       # v1 requirements (DB, Auth, Payments, Quotas, Gating, Billing UI)
+│   ├── ROADMAP.md            # 3-phase roadmap (Foundation → Payments → Gating)
+│   ├── STATE.md              # Project state tracker
+│   └── research/             # Deep research (ARCHITECTURE, FEATURES, PITFALLS, STACK, SUMMARY)
+└── .env.example              # Environment vars for GitHub App, Stripe, Supabase
 ```
 
 ## Key Conventions
@@ -60,7 +73,9 @@ v2p-complete-package/repo/
 - **Demo app**: Express 4.21, PostgreSQL (pg), JWT, CORS
 - **Framework**: Anthropic SDK, MCP SDK, Zod, tsx
 - **Dashboard**: Next.js 15, Tailwind CSS 4, Recharts, Lucide icons
-- **Deploy**: Docker multi-stage, GitHub Actions CI, AWS ECS Fargate + RDS
+- **Auth**: Supabase Auth (`@supabase/ssr`) — planned for monetization
+- **Payments**: Stripe Checkout (`stripe` ^17.x, `@stripe/stripe-js` ^9.0) — planned for monetization
+- **Deploy**: Vercel (dashboard), Docker multi-stage, GitHub Actions CI, AWS ECS Fargate + RDS
 
 ## Score Computation
 - Readiness = 0.3*L1 + 0.3*L2 + 0.25*Security + 0.15*Behavioral
@@ -110,7 +125,8 @@ LEARN → Production signals → New defects → New eval judges
 ### Compliance & Evidence Layer
 - **Scanner plugins**: Standardized interface for compliance, governance, and evidence scanners
 - **Evidence chain**: SHA-256 integrity-verified JSONL audit trail (`logs/evidence-chain.jsonl`)
-- **Guardian subsystem**: 9+ specialized scanners (DAST, PII, injection, supply-chain, secret, prompt-injection, etc.)
+- **Guardian subsystem**: 10+ specialized scanners (DAST, PII, injection, supply-chain, secret, prompt-injection, database-security, etc.)
+- **Database security scanner**: Detects missing Supabase RLS policies, insecure Firebase rules, exposed service role keys
 - **PDF reports**: Automated compliance report generation
 
 ### Dashboard (Next.js 15)
@@ -118,6 +134,9 @@ LEARN → Production signals → New defects → New eval judges
 - 4 tabs: Overview, File Analysis, Store Ready (Apple/Google), Antifragile
 - Real scan data integration — wired to actual VibeCheck scan output
 - Responsive design with accessibility fixes
+- **Shareable reports**: UUID-based report URLs with score ring, defect charts, stats cards
+- **API auth & rate limiting**: Per-tier limits (scan: 10/min, report: 30/min) — v1 in-memory, Upstash Redis planned
+- **GitHub App integration**: Webhook handler for PR events → check runs + inline review comments
 
 ### Landing Page
 - **Branding**: "VibeCheck by Antifragile.AI" in navbar
@@ -132,6 +151,13 @@ LEARN → Production signals → New defects → New eval judges
 - **MCP server**: `vibecheck-mcp` — exposes VibeCheck tools to Claude Code
 - **Skills**: scan-and-fix, harden, post-migration, antifragile-report, comply
 - **MCP tools**: `vc_comply`, `vc_evidence_verify`, and standard scan/fix/score tools
+
+### Monetization Roadmap (Planned)
+- **Phase 1**: Supabase database + Auth setup (users, customers, subscriptions, scans tables with RLS)
+- **Phase 2**: Stripe Checkout + webhooks (subscription lifecycle management)
+- **Phase 3**: Scan quotas + feature gating + billing UI
+- **Pricing tiers**: Free (3 scans/mo) → Pro ($49/mo) → Enterprise ($199/mo)
+- **Distribution**: GitHub App webhook → PR check runs + inline review comments
 
 ## Common Commands
 ```bash
@@ -157,6 +183,7 @@ npm run vibecheck -- evidence:verify     # Verify evidence chain integrity
 
 # Analysis
 npm run vibecheck -- analyze             # Error analysis
+npm run vibecheck -- scan:database       # Database security scanning (RLS, service keys)
 npm run vibecheck -- scan:e2e            # End-to-end scanning with compliance
 npm run vibecheck -- validate-judges     # Measure judge precision + recall
 npm run vibecheck -- launch-report       # Generate launch report
