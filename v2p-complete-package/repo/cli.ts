@@ -173,6 +173,10 @@ switch (command) {
     tsx("scripts/run-scanner.ts", ["api-contract", ...args.slice(1)]);
     break;
 
+  case "scan:database":
+    tsx("scripts/run-scanner.ts", ["database-security", ...args.slice(1)]);
+    break;
+
   case "subtract":
     tsx("subtract/scanner.ts", args.slice(1));
     break;

@@ -4,13 +4,14 @@ import * as injectionScanner from './injection-scanner';
 import * as accessControlScanner from './access-control-scanner';
 import * as supplyChainScanner from './supply-chain-scanner';
 import * as promptInjectionScanner from './prompt-injection-scanner';
+import * as databaseSecurityScanner from './database-security-scanner';
 import * as llmJudge from './llm-judge';
 
 // Re-export the shared Finding interface
 export type { Finding } from './secret-scanner';
 
 // Re-export all scanners
-export { secretScanner, piiScanner, injectionScanner, accessControlScanner, supplyChainScanner, promptInjectionScanner };
+export { secretScanner, piiScanner, injectionScanner, accessControlScanner, supplyChainScanner, promptInjectionScanner, databaseSecurityScanner };
 
 // Re-export llm-judge
 export { llmJudge };
@@ -50,6 +51,7 @@ const ALL_SCANNERS: ScannerEntry[] = [
   { name: 'access-control-scanner', scan: accessControlScanner.scan },
   { name: 'supply-chain-scanner', scan: supplyChainScanner.scan },
   { name: 'prompt-injection-scanner', scan: promptInjectionScanner.scan },
+  { name: 'database-security-scanner', scan: databaseSecurityScanner.scan },
 ];
 
 /**

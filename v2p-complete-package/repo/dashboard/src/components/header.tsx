@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 interface HeaderProps {
   scan: { project: string; scanned_at: string; files_scanned: number; total_defects: number; by_priority: { P0: number } };
   onRescan?: () => void;
@@ -9,6 +11,25 @@ interface HeaderProps {
 export function Header({ scan, onRescan, onNewScan }: HeaderProps) {
   const isBlocked = scan.by_priority.P0 > 0;
   const timeAgo = getTimeAgo(scan.scanned_at);
+  const [copied, setCopied] = useState(false);
+  const [hasReport, setHasReport] = useState(false);
+
+  // Read sessionStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    setHasReport(!!sessionStorage.getItem("vibecheck-report-id"));
+  }, []);
+
+  const handleShare = () => {
+    const reportId = sessionStorage.getItem("vibecheck-report-id");
+    if (!reportId) return;
+    const url = `${window.location.origin}/report/${reportId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Clipboard access denied — fail silently
+    });
+  };
 
   return (
     <header className="h-16 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] flex items-center justify-between px-6 pl-16 lg:pl-6">
@@ -32,6 +53,19 @@ export function Header({ scan, onRescan, onNewScan }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-3">
+        {hasReport && (
+          <button
+            onClick={handleShare}
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-bright)] transition-all"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            {copied ? "Copied!" : "Share"}
+          </button>
+        )}
         {onNewScan && (
           <button
             onClick={onNewScan}
