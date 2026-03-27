@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
   // 5. Handle installation events (logging only for v1)
   if (event === "installation") {
-    console.log(`[vibecheck-webhook] Installation ${payload.action}: ${payload.installation?.id}`);
+    // Installation event received — handled silently for v1
     return NextResponse.json({ status: "ok" });
   }
 

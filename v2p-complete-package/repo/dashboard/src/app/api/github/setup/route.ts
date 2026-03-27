@@ -11,8 +11,13 @@ export async function GET(request: Request) {
   const installationId = url.searchParams.get("installation_id");
   const setupAction = url.searchParams.get("setup_action");
 
-  console.log(`[vibecheck-setup] Installation callback: action=${setupAction}, id=${installationId}`);
+  // Validate required params from GitHub callback
+  if (!installationId || !setupAction) {
+    return NextResponse.redirect(new URL("/setup/github?error=missing_params", url.origin));
+  }
 
-  // Redirect to setup page with success indicator
-  return NextResponse.redirect(new URL("/setup/github?success=true", request.url));
+  // Use url.origin for redirect base to prevent host-header open redirect
+  return NextResponse.redirect(
+    new URL(`/setup/github?success=true&installation_id=${encodeURIComponent(installationId)}`, url.origin),
+  );
 }

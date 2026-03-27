@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface HeaderProps {
   scan: { project: string; scanned_at: string; files_scanned: number; total_defects: number; by_priority: { P0: number } };
@@ -12,18 +12,24 @@ export function Header({ scan, onRescan, onNewScan }: HeaderProps) {
   const isBlocked = scan.by_priority.P0 > 0;
   const timeAgo = getTimeAgo(scan.scanned_at);
   const [copied, setCopied] = useState(false);
+  const [hasReport, setHasReport] = useState(false);
+
+  // Read sessionStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    setHasReport(!!sessionStorage.getItem("vibecheck-report-id"));
+  }, []);
 
   const handleShare = () => {
-    const reportId = typeof window !== "undefined" ? sessionStorage.getItem("vibecheck-report-id") : null;
+    const reportId = sessionStorage.getItem("vibecheck-report-id");
     if (!reportId) return;
     const url = `${window.location.origin}/report/${reportId}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Clipboard access denied — fail silently
     });
   };
-
-  const hasReport = typeof window !== "undefined" && !!sessionStorage.getItem("vibecheck-report-id");
 
   return (
     <header className="h-16 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] flex items-center justify-between px-6 pl-16 lg:pl-6">

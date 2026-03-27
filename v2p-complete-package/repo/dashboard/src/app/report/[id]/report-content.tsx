@@ -7,8 +7,18 @@ import { FileList } from "@/components/file-list";
 import type { ReportData } from "@/lib/report-store";
 import { Logo } from "@/components/logo";
 
+function safeGitHubUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "github.com" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export function ReportContent({ report }: { report: ReportData }) {
-  const { scanResult, repoUrl, createdAt } = report;
+  const { scanResult, repoUrl: rawRepoUrl, createdAt } = report;
+  const repoUrl = safeGitHubUrl(rawRepoUrl);
   const readiness = Math.round(scanResult.overall_readiness * 100);
   const scanDate = new Date(createdAt).toLocaleDateString("en-US", {
     year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
@@ -47,14 +57,18 @@ export function ReportContent({ report }: { report: ReportData }) {
         <div className="flex flex-wrap gap-4 text-xs text-[var(--color-text-muted)]">
           <span>Scanned {scanDate}</span>
           <span className="text-[var(--color-border)]">&middot;</span>
-          <a
-            href={repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-[var(--color-text-secondary)] transition-colors"
-          >
-            {repoUrl.replace("https://github.com/", "")}
-          </a>
+          {repoUrl ? (
+            <a
+              href={repoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--color-text-secondary)] transition-colors"
+            >
+              {repoUrl.replace("https://github.com/", "")}
+            </a>
+          ) : (
+            <span>{rawRepoUrl}</span>
+          )}
         </div>
       </div>
 

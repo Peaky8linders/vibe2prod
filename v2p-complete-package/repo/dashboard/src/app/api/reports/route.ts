@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { generateReportId, saveReport, listReports } from "@/lib/report-store";
+import { checkRateLimit, getClientIp, parseJsonBody } from "@/lib/api-auth";
 import type { ScanResult } from "@/lib/scanner-engine";
 
 /** POST /api/reports — Save a scan report and return its shareable ID */
 export async function POST(request: Request) {
+  const rateLimited = checkRateLimit(getClientIp(request), "report");
+  if (rateLimited) return rateLimited;
+
   try {
-    const body = await request.json();
-    const { scanResult, repoUrl } = body as { scanResult?: ScanResult; repoUrl?: string };
+    const parsed = await parseJsonBody<{ scanResult?: ScanResult; repoUrl?: string }>(request);
+    if ("error" in parsed) return parsed.error;
+
+    const { scanResult, repoUrl } = parsed.data;
 
     if (!scanResult || !repoUrl) {
       return NextResponse.json(
@@ -29,7 +35,10 @@ export async function POST(request: Request) {
 }
 
 /** GET /api/reports — List recent scan reports */
-export async function GET() {
+export async function GET(request: Request) {
+  const rateLimited = checkRateLimit(getClientIp(request), "report");
+  if (rateLimited) return rateLimited;
+
   try {
     const reports = listReports(20);
     return NextResponse.json({ reports });

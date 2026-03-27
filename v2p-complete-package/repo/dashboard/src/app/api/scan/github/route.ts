@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { fetchAndScanRepo, parseGitHubUrl } from "@/lib/scanner-engine";
 import { generateReportId, saveReport } from "@/lib/report-store";
+import { checkRateLimit, getClientIp } from "@/lib/api-auth";
 
 export const maxDuration = 60; // Allow up to 60s for large repos
 
 export async function POST(request: Request) {
+  const rateLimited = checkRateLimit(getClientIp(request), "scan");
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json();
     const url = body?.url;

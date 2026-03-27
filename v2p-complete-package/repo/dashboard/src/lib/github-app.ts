@@ -116,7 +116,7 @@ export async function getChangedFiles(
   repo: string,
   prNumber: number,
 ): Promise<PullRequestFile[]> {
-  const files = await githubApi(token, `/repos/${owner}/${repo}/pulls/${prNumber}/files`) as PullRequestFile[];
+  const files = await githubApi(token, `/repos/${owner}/${repo}/pulls/${prNumber}/files?per_page=100`) as PullRequestFile[];
   return files.filter((f) => f.status !== "removed");
 }
 
@@ -133,30 +133,35 @@ export async function fetchFileContents(
   // Only fetch source files, skip large lists
   const toFetch = filenames.filter((f) => sourceExts.test(f)).slice(0, 100);
 
-  await Promise.all(
-    toFetch.map(async (filename) => {
-      try {
-        const res = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/contents/${filename}?ref=${ref}`,
-          {
-            headers: {
-              Authorization: `token ${token}`,
-              Accept: "application/vnd.github.raw+json",
-              "X-GitHub-Api-Version": "2022-11-28",
+  // Fetch in batches of 10 to avoid GitHub secondary rate limits
+  const BATCH_SIZE = 10;
+  for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+    const batch = toFetch.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (filename) => {
+        try {
+          const res = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(filename)}?ref=${ref}`,
+            {
+              headers: {
+                Authorization: `token ${token}`,
+                Accept: "application/vnd.github.raw+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+              },
             },
-          },
-        );
-        if (res.ok) {
-          const content = await res.text();
-          if (content.length <= 1024 * 1024) { // Skip files > 1MB
-            files.set(filename, content);
+          );
+          if (res.ok) {
+            const content = await res.text();
+            if (content.length <= 1024 * 1024) { // Skip files > 1MB
+              files.set(filename, content);
+            }
           }
+        } catch {
+          // Skip files we can't fetch
         }
-      } catch {
-        // Skip files we can't fetch
-      }
-    }),
-  );
+      }),
+    );
+  }
 
   return files;
 }
@@ -165,71 +170,10 @@ export async function fetchFileContents(
 // Check Run Management
 // ---------------------------------------------------------------------------
 
-export async function createCheckRun(
-  token: string,
-  owner: string,
-  repo: string,
-  headSha: string,
-  status: "in_progress" | "completed",
-  scanResult?: ScanResult,
-): Promise<number> {
-  const body: Record<string, unknown> = {
-    name: "VibeCheck Security",
-    head_sha: headSha,
-    status,
-  };
-
-  if (status === "completed" && scanResult) {
-    const { by_priority, total_defects, overall_readiness, files_scanned } = scanResult;
-    const readiness = Math.round(overall_readiness * 100);
-
-    // Determine conclusion
-    let conclusion: string;
-    if (by_priority.P0 > 0) conclusion = "failure";
-    else if (by_priority.P1 > 0) conclusion = "neutral";
-    else conclusion = "success";
-
-    // Build summary
-    const summary = [
-      `## VibeCheck Security Scan`,
-      ``,
-      `**${readiness}% Production Ready** | ${files_scanned} files scanned | ${total_defects} defects found`,
-      ``,
-      `| Priority | Count |`,
-      `|----------|-------|`,
-      `| P0 (Critical) | ${by_priority.P0} |`,
-      `| P1 (High) | ${by_priority.P1} |`,
-      `| P2 (Medium) | ${by_priority.P2} |`,
-      `| P3 (Low) | ${by_priority.P3} |`,
-      ``,
-      by_priority.P0 > 0
-        ? `> **Merge blocked**: ${by_priority.P0} critical (P0) issues must be resolved.`
-        : `> All critical checks passed.`,
-    ].join("\n");
-
-    body.conclusion = conclusion;
-    body.output = {
-      title: `${readiness}% Ready — ${total_defects} defects`,
-      summary,
-    };
-  }
-
-  const result = await githubApi(token, `/repos/${owner}/${repo}/check-runs`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  }) as { id: number };
-
-  return result.id;
-}
-
-export async function updateCheckRun(
-  token: string,
-  owner: string,
-  repo: string,
-  checkRunId: number,
-  scanResult: ScanResult,
-  annotations: CheckAnnotation[],
-): Promise<void> {
+function buildCheckRunOutput(scanResult: ScanResult): {
+  conclusion: string;
+  output: { title: string; summary: string };
+} {
   const { by_priority, total_defects, overall_readiness, files_scanned } = scanResult;
   const readiness = Math.round(overall_readiness * 100);
 
@@ -255,6 +199,50 @@ export async function updateCheckRun(
       : `> All critical checks passed.`,
   ].join("\n");
 
+  return {
+    conclusion,
+    output: { title: `${readiness}% Ready — ${total_defects} defects`, summary },
+  };
+}
+
+export async function createCheckRun(
+  token: string,
+  owner: string,
+  repo: string,
+  headSha: string,
+  status: "in_progress" | "completed",
+  scanResult?: ScanResult,
+): Promise<number> {
+  const body: Record<string, unknown> = {
+    name: "VibeCheck Security",
+    head_sha: headSha,
+    status,
+  };
+
+  if (status === "completed" && scanResult) {
+    const { conclusion, output } = buildCheckRunOutput(scanResult);
+    body.conclusion = conclusion;
+    body.output = output;
+  }
+
+  const result = await githubApi(token, `/repos/${owner}/${repo}/check-runs`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  }) as { id: number };
+
+  return result.id;
+}
+
+export async function updateCheckRun(
+  token: string,
+  owner: string,
+  repo: string,
+  checkRunId: number,
+  scanResult: ScanResult,
+  annotations: CheckAnnotation[],
+): Promise<void> {
+  const { conclusion, output } = buildCheckRunOutput(scanResult);
+
   // GitHub limits annotations to 50 per request
   const limitedAnnotations = annotations.slice(0, 50);
 
@@ -264,8 +252,7 @@ export async function updateCheckRun(
       status: "completed",
       conclusion,
       output: {
-        title: `${readiness}% Ready — ${total_defects} defects`,
-        summary,
+        ...output,
         annotations: limitedAnnotations,
       },
     }),
