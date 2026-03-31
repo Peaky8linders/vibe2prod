@@ -43,6 +43,26 @@ const KNOWN_HALLUCINATED_PACKAGES: Record<string, string> = {
 };
 
 /**
+ * Known malicious packages — active or recent supply chain attacks.
+ * These are P0 (critical) because they contain confirmed malicious payloads.
+ * Last updated: 2026-03-31 — update immediately when new attacks are reported.
+ */
+const KNOWN_MALICIOUS: Record<string, string> = {
+  "plain-crypto-js": "Malicious package injected via axios@1.14.1 supply chain attack (2026-03-31) — does not exist as legitimate package",
+  "flatmap-stream": "Malicious package from event-stream supply chain attack (2018)",
+  "eslint-scope": "Compromised to steal npm tokens (2018)",
+  "getcookies": "Backdoored package used in eslint-scope attack chain",
+  "crossenv": "Typosquat of cross-env — steals environment variables",
+  "cross-env.js": "Typosquat of cross-env — steals environment variables",
+  "d3.js": "Typosquat of d3 — malicious payload",
+  "grpc.js": "Typosquat of @grpc/grpc-js — malicious payload",
+  "mongose": "Typosquat of mongoose — steals credentials",
+  "babelcli": "Typosquat of babel-cli — malicious payload",
+  "jqurey": "Typosquat of jquery — malicious payload",
+  "lodahs": "Typosquat of lodash — malicious payload",
+};
+
+/**
  * Packages with known security issues that AI still recommends.
  * Last updated: 2026-03-31 — review quarterly against npm advisory DB.
  */
@@ -208,6 +228,15 @@ function scanPackageJson(content: string, lines: string[], defects: FileDefect[]
   for (const [pkg, version] of Object.entries(allDeps)) {
     const lineNum = findLineNumber(lines, pkg);
 
+    // --- Known MALICIOUS packages (P0 — immediate action required) ---
+    if (KNOWN_MALICIOUS[pkg]) {
+      defects.push({
+        id: nextId(), dimension: "supply-chain", priority: "P0", line: lineNum,
+        description: `MALICIOUS PACKAGE "${pkg}" — ${KNOWN_MALICIOUS[pkg]}`,
+        fix_hint: `Remove "${pkg}" immediately. Run npm audit and check for data exfiltration. Rotate any secrets that may have been exposed.`,
+      });
+    }
+
     // --- Known hallucinated packages ---
     if (KNOWN_HALLUCINATED_PACKAGES[pkg]) {
       defects.push({
@@ -312,6 +341,15 @@ function scanPythonDeps(content: string, lines: string[], defects: FileDefect[],
     const pkgMatch = line.match(/^([a-zA-Z0-9_-]+)/);
     if (!pkgMatch) continue;
     const pkg = pkgMatch[1]!.toLowerCase();
+
+    // --- Known MALICIOUS packages (P0 — immediate action required) ---
+    if (KNOWN_MALICIOUS[pkg]) {
+      defects.push({
+        id: nextId(), dimension: "supply-chain", priority: "P0", line: lineNum,
+        description: `MALICIOUS PACKAGE "${pkg}" — ${KNOWN_MALICIOUS[pkg]}`,
+        fix_hint: `Remove "${pkg}" immediately. Run pip-audit and check for data exfiltration. Rotate any secrets that may have been exposed.`,
+      });
+    }
 
     // --- Known hallucinated Python packages ---
     if (KNOWN_HALLUCINATED_PACKAGES[pkg]) {
