@@ -38,15 +38,49 @@ v2p-complete-package/repo/
 │   └── report/               # PDF report generation
 │
 │── # Product Surface
-├── dashboard/                # Next.js 15 production readiness UI
-│   ├── src/app/              # App router (dark theme, 4-tab interface)
+├── dashboard/                # Next.js 15.3 production readiness UI
+│   ├── src/app/              # App router (dark theme, 5-tab interface)
 │   ├── src/app/api/          # API routes (scan, github webhook, reports, auth)
-│   ├── src/app/report/       # Shareable report pages (UUID-based)
+│   │   ├── scan/github/      # GitHub repo scanning endpoint
+│   │   ├── github/webhook/   # GitHub App webhook handler (PR events → check runs)
+│   │   ├── github/setup/     # GitHub App installation flow
+│   │   └── reports/          # Report CRUD (save, list, retrieve)
+│   ├── src/app/report/       # Shareable report pages (UUID-based, OG meta tags)
 │   ├── src/app/setup/        # GitHub App setup/installation flow
-│   ├── src/lib/              # github-app, api-auth, report-store, scanner-engine
-│   └── src/components/       # score-ring, defect-chart, action-prompts, antifragile-score
+│   ├── src/lib/              # Core libraries
+│   │   ├── github-app.ts     # GitHub App client (JWT auth, RSA-SHA256, zero deps)
+│   │   ├── api-auth.ts       # Rate limiting & payload validation
+│   │   ├── report-store.ts   # Filesystem report storage (UUID, path traversal protection)
+│   │   ├── scanner-engine.ts # Scan orchestration (batch fetch, 10 concurrent)
+│   │   ├── scan-limits.ts    # Per-tier scan limits & trial tracking
+│   │   ├── review-engine.ts  # Structured review report generation
+│   │   ├── export-review.ts  # Review export (Markdown, JSON, clipboard)
+│   │   └── scanners/         # 10 production readiness scanner plugins
+│   │       ├── security-scanner.ts          # Hardcoded secrets, injection, auth gaps
+│   │       ├── database-security-scanner.ts # Supabase RLS, Firebase rules, service keys
+│   │       ├── performance-scanner.ts       # N+1 queries, sync blocking, pagination
+│   │       ├── observability-scanner.ts     # Tracing, health checks, logging gaps
+│   │       ├── api-contract-scanner.ts      # Missing validation, breaking changes
+│   │       ├── code-quality-scanner.ts      # Dead code, unused imports, complexity
+│   │       ├── compliance-scanner.ts        # GDPR, PII handling, audit logging
+│   │       ├── governance-scanner.ts        # Access control, secrets, incident response
+│   │       ├── supply-chain-scanner.ts      # Slopsquatting, hallucinated pkgs, deprecated deps
+│   │       └── plugin-interface.ts          # Standard scanner contract (ScannerPlugin type)
+│   └── src/components/       # UI components
+│       ├── score-ring, defect-chart, stats-cards, file-list
+│       ├── review-tab.tsx    # Structured review with severity badges & export
+│       ├── antifragile-score.tsx
+│       └── landing/          # Landing page components
+│           ├── navbar.tsx    # Nav with GitHub App install button
+│           ├── hero.tsx      # GitHub URL input wired to /api/scan/github
+│           ├── features.tsx  # 9-card capability grid
+│           ├── pricing.tsx   # 3-tier with annual/monthly toggle
+│           ├── how-it-works.tsx
+│           └── footer.tsx
 ├── servers/                  # MCP server (vibecheck-server.ts)
 ├── skills/                   # Claude Code MCP skills (scan-and-fix, harden, comply, etc.)
+│   ├── ci-cd/                # CI/CD integration skills
+│   └── perf-audit/           # Performance audit skills
 ├── integrations/             # External integrations (migrationforge)
 ├── reports/                  # Generated stakeholder reports + prompt templates
 │
@@ -56,7 +90,13 @@ v2p-complete-package/repo/
 │   ├── REQUIREMENTS.md       # v1 requirements (DB, Auth, Payments, Quotas, Gating, Billing UI)
 │   ├── ROADMAP.md            # 3-phase roadmap (Foundation → Payments → Gating)
 │   ├── STATE.md              # Project state tracker
+│   ├── config.json           # Project configuration
 │   └── research/             # Deep research (ARCHITECTURE, FEATURES, PITFALLS, STACK, SUMMARY)
+│
+│── # Configuration
+├── .claude-plugin/           # Claude Code plugin (manifest.json, plugin.json)
+├── github-app-manifest.json  # GitHub App permissions & webhook config
+├── DEPLOY.md                 # Deployment guide (Vercel, Netlify, Cloudflare, Railway)
 └── .env.example              # Environment vars for GitHub App, Stripe, Supabase
 ```
 
@@ -72,7 +112,7 @@ v2p-complete-package/repo/
 - **Runtime**: Node.js >= 20, TypeScript 5.6+
 - **Demo app**: Express 4.21, PostgreSQL (pg), JWT, CORS
 - **Framework**: Anthropic SDK, MCP SDK, Zod, tsx
-- **Dashboard**: Next.js 15, Tailwind CSS 4, Recharts, Lucide icons
+- **Dashboard**: Next.js 15.3, Tailwind CSS 4.0 (@tailwindcss/postcss), Recharts 2.15, Lucide React 0.475
 - **Auth**: Supabase Auth (`@supabase/ssr`) — planned for monetization
 - **Payments**: Stripe Checkout (`stripe` ^17.x, `@stripe/stripe-js` ^9.0) — planned for monetization
 - **Deploy**: Vercel (dashboard), Docker multi-stage, GitHub Actions CI, AWS ECS Fargate + RDS
@@ -129,14 +169,39 @@ LEARN → Production signals → New defects → New eval judges
 - **Database security scanner**: Detects missing Supabase RLS policies, insecure Firebase rules, exposed service role keys
 - **PDF reports**: Automated compliance report generation
 
-### Dashboard (Next.js 15)
+### Dashboard (Next.js 15.3)
 - Dark theme (#0a0a0f) with green/cyan accents — SaaS security product positioning
-- 4 tabs: Overview, File Analysis, Store Ready (Apple/Google), Antifragile
+- 5 tabs: Overview, File Analysis, Store Ready (Apple/Google), Antifragile, Review
 - Real scan data integration — wired to actual VibeCheck scan output
 - Responsive design with accessibility fixes
-- **Shareable reports**: UUID-based report URLs with score ring, defect charts, stats cards
-- **API auth & rate limiting**: Per-tier limits (scan: 10/min, report: 30/min) — v1 in-memory, Upstash Redis planned
-- **GitHub App integration**: Webhook handler for PR events → check runs + inline review comments
+- **Shareable reports**: UUID-based report URLs with OG meta tags, score ring, defect charts, stats cards
+  - Filesystem-based storage with path traversal protection (UUID format validation)
+  - REST API: `POST /api/reports` (save), `GET /api/reports` (list), `GET /api/reports/[id]` (retrieve)
+  - Auto-save on GitHub scans with shareable URL generation + copy-to-clipboard
+- **API auth & rate limiting**: Per-tier limits (scan: 10/min, report: 30/min, 1MB payload max) — v1 in-memory, Upstash Redis planned
+- **GitHub App integration**: Zero-dependency client using native `node:crypto`
+  - JWT-based auth with RSA-SHA256 signing, timing-safe webhook signature verification
+  - Webhook handler for `pull_request` (opened/synchronize) and `installation` events
+  - Check run creation with inline annotations and review comments
+  - Setup page with install button and permissions display
+- **Review tab**: Structured review reports with engineering, design, and QA passes
+  - Severity badges (P0/P1/P2/P3), expandable sections, top priority actions
+  - Export in 3 formats: Markdown, JSON (CI/CD), clipboard
+- **Production readiness scanners** (10 plugins in `src/lib/scanners/`):
+  - Security, database security, performance, observability, API contract
+  - Code quality, compliance (GDPR/PII), governance, supply chain, + plugin interface
+  - Supply chain scanner: slopsquatting detection, hallucinated package names, deprecated/insecure deps, unpinned versions, dynamic imports with user input
+- **Real GitHub scanning**: URL parser + validation, batch file fetch (10 concurrent, per_page=100)
+
+### Security Hardening (Latest)
+- Escaped table names before regex to prevent ReDoS
+- Timing-safe equality for webhook signature comparison
+- URL sanitization preventing stored XSS via `javascript:` URLs
+- Open redirect prevention in GitHub setup (`url.origin` not `request.url`)
+- Removed console.log from production routes
+- Fixed React hydration mismatch in header
+- Proper error handling on clipboard API calls
+- Removed orphaned check run logic race condition
 
 ### Landing Page
 - **Branding**: "VibeCheck by Antifragile.AI" in navbar
@@ -149,8 +214,8 @@ LEARN → Production signals → New defects → New eval judges
 
 ### MCP Integration
 - **MCP server**: `vibecheck-mcp` — exposes VibeCheck tools to Claude Code
-- **Skills**: scan-and-fix, harden, post-migration, antifragile-report, comply
-- **MCP tools**: `vc_comply`, `vc_evidence_verify`, and standard scan/fix/score tools
+- **Skills**: scan-and-fix, harden, post-migration, antifragile-report, comply, ci-cd, perf-audit
+- **MCP tools**: `vc_comply`, `vc_evidence_verify`, `vc_scan_database`, `vc_scan_github`, and standard scan/fix/score tools
 
 ### Monetization Roadmap (Planned)
 - **Phase 1**: Supabase database + Auth setup (users, customers, subscriptions, scans tables with RLS)
@@ -184,14 +249,49 @@ npm run vibecheck -- evidence:verify     # Verify evidence chain integrity
 # Analysis
 npm run vibecheck -- analyze             # Error analysis
 npm run vibecheck -- scan:database       # Database security scanning (RLS, service keys)
+npm run vibecheck -- scan:perf           # Performance scanner (N+1, blocking, pagination)
+npm run vibecheck -- scan:observability  # Observability scanner (tracing, health, logging)
+npm run vibecheck -- scan:api            # API contract scanner (validation, breaking changes)
+npm run vibecheck -- scan:github         # GitHub repo scanning (dashboard-integrated)
 npm run vibecheck -- scan:e2e            # End-to-end scanning with compliance
 npm run vibecheck -- validate-judges     # Measure judge precision + recall
 npm run vibecheck -- launch-report       # Generate launch report
 npm run vibecheck -- badge               # Generate readiness badge
 ```
 
+## Environment Variables
+```bash
+# GitHub App
+GITHUB_APP_ID=                    # GitHub App ID
+GITHUB_APP_PRIVATE_KEY=           # RSA private key (PEM format)
+GITHUB_WEBHOOK_SECRET=            # Webhook signature verification secret
+NEXT_PUBLIC_GITHUB_APP_URL=       # Public GitHub App install URL
+
+# Monetization (Planned)
+NEXT_PUBLIC_SUPABASE_URL=         # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # Supabase anon/public key
+SUPABASE_SERVICE_ROLE_KEY=        # Supabase service role (server-only)
+STRIPE_SECRET_KEY=                # Stripe secret key (server-only)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY= # Stripe publishable key
+STRIPE_WEBHOOK_SECRET=            # Stripe webhook signing secret
+```
+
+## Deployment
+- **Primary**: Vercel (recommended for Next.js dashboard)
+- **Alternatives**: Netlify, Cloudflare Pages, Railway
+- **Guide**: `dashboard/DEPLOY.md` — env setup, custom domain, pre-flight checklist
+
 ## Positioning
 - **Core**: "Security scanners tell you what's broken. VibeCheck fixes it while you sleep."
 - **Antifragile**: "Your app doesn't just survive attacks — it gets stronger from them."
 - **Compliance**: "Evidence-based compliance — every fix cryptographically linked to its defect."
 - **Category**: "Antifragile" is unoccupied in the vibe-coding security market.
+
+## Competitive Landscape (March 2026)
+- **Vibe App Scanner (VAS)**: Quick scan focus, tiered pricing ($5-$29/mo), detects exposed secrets/RLS/auth gaps
+- **Aikido**: Broader AppSec platform, not vibe-coding specific
+- **ChakraView**: Newer entrant, vibe-code focused
+- **amihackable.dev**: Simple vulnerability check for vibe-coded apps
+- **Lovable built-in**: Auto-scans before publish (RLS, schema, deps) — shallow checks
+- **kluster.ai**: IDE-integrated real-time scanning with OWASP guardrails
+- **VibeCheck differentiator**: Only tool that both scans AND autonomously fixes, with antifragile loop (chaos testing → production learning → continuous hardening). Competitors scan and report; VibeCheck closes the loop.
